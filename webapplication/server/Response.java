@@ -50,20 +50,34 @@ public class Response implements HttpServletResponse {
   @Override
   public OutputStream getOutputStream() throws IOException {
 
-    System.out.println("데이터 읽음");
-    PrintWriter writer = new PrintWriter(clientSocket.getOutputStream());
-    sendGeneral(writer);
-    sendHeader(writer);
-    writer.flush();
-
     OutputStream outputStream = clientSocket.getOutputStream();
+    sendGeneral(outputStream);
+    sendHeader(outputStream);
+    outputStream.flush();
     return outputStream;
   }
 
 
+  private void sendHeader(OutputStream outputStream) throws IOException {
+
+    for (String header : responseHeader.keySet()) {
+      outputStream.write((header + ": " + responseHeader.get(header)).getBytes());
+      outputStream.write("\r\n".getBytes());
+    }
+    outputStream.write("\r\n".getBytes());
+  }
+
   private void sendGeneral(PrintWriter writer) {
 
     writer.println(HTML11 + " " + stateCode.getStateCode() + " " + stateCode.getDescription());
+  }
+
+  private void sendGeneral(OutputStream outputStream) throws IOException {
+
+    String generalHeader =
+        HTML11 + " " + stateCode.getStateCode() + " " + stateCode.getDescription() + "\r\n";
+    byte[] buf = generalHeader.getBytes();
+    outputStream.write(buf);
   }
 
   private void sendHeader(PrintWriter writer) {

@@ -5,6 +5,7 @@ public class Main {
 
   /**
    * Run the web application.
+   * @throws InterruptedException 
    */
   public static final void main(String[] args) {
 

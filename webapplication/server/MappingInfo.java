@@ -46,6 +46,12 @@ public class MappingInfo {
 
   }
 
+  /**
+   * sub Tag of servlet. If subTag have servlet name, pattern will map url.
+   * 
+   * @param directory  path of directory
+   * @param xmlServletMappingInfo servlet-name and url-pattern infomation
+   */
   private void mappingServletPatternToName(Path directory, Xml xmlServletMappingInfo) {
 
     List<String> patterns = new ArrayList<>();

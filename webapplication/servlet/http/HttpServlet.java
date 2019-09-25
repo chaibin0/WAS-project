@@ -22,8 +22,7 @@ public class HttpServlet extends GenericServlet {
       case "POST":
         doPost(request, response);
         break;
-      case "PUT":
-        
+      case "PUT":   
         break;
       case "DELETE":
         break;

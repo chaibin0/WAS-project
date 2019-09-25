@@ -2,8 +2,6 @@ package server.http;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.Socket;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -11,8 +9,6 @@ import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
 public class HttpParsedRequest {
-
-  private Socket socket;
 
   private String version;
 
@@ -26,56 +22,61 @@ public class HttpParsedRequest {
 
   private Map<String, String> content;
 
-  public HttpParsedRequest(Socket clientSocket) throws IOException, NoSuchElementException {
-
-    this.socket = clientSocket;
-
-
-    BufferedReader reader =
-        new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-    // String message = getMessage(reader);
+  public HttpParsedRequest(BufferedReader reader)
+      throws IOException, NoSuchElementException, InterruptedException {
 
     content = new HashMap<>();
     header = new Hashtable<>();
-    StringTokenizer st;
-    String line = "";
-    // 기본 정보 확인
-    if ((line = reader.readLine()) != null) {
-      System.out.println(line);
 
-      st = new StringTokenizer(line);
-      method = st.nextToken().toUpperCase();
-      requestUrl = st.nextToken();
-      version = st.nextToken();
-    } else {
-      throw new IOException();
+
+    String message = getMessage(reader);
+    String[] lineSplit = message.split("\r\n", -1);
+    if (lineSplit[0].isEmpty()) {
+      return;
     }
 
-    // 헤더 확인
-    while (!(line = reader.readLine()).equals("")) {
-      System.out.println(line);
-      st = new StringTokenizer(line, ": ");
+    startLine(lineSplit[0]);
+
+
+    // check header
+    int length = lineSplit.length;
+    if (method.equals("POST")) {
+      // remove body type
+      length -= 1;
+    }
+
+    // store header
+    for (int i = 1; i < length; i++) {
+      if (lineSplit[i].isEmpty() || lineSplit[i].equals(" ")) {
+        break;
+      }
+      String headers = lineSplit[i];
+      StringTokenizer st = new StringTokenizer(headers, ": ");
       String name = st.nextToken();
       String value = st.nextToken();
       header.put(name, value);
     }
 
+
     switch (method) {
       case "GET":
-        st = new StringTokenizer(requestUrl, "?");
+        StringTokenizer st = new StringTokenizer(requestUrl, "?");
         url = st.nextToken();
-        System.out.println("요청URL :" + url);
-        while (st.hasMoreTokens()) {
+        if (st.hasMoreElements()) {
           parseContent(st.nextToken());
         }
         break;
       case "POST":
-        System.out.print(reader.readLine());
-        parseContent(reader.readLine());
+        url = requestUrl;
+        parseContent(lineSplit[length]);
         break;
       case "PUT":
+        url = requestUrl;
+        parseContent(lineSplit[length]);
         break;
       case "DELETE":
+        url = requestUrl;
+        parseContent(lineSplit[length]);
         break;
       case "TRACE":
         break;
@@ -88,40 +89,62 @@ public class HttpParsedRequest {
 
   }
 
-  private String getMessage(BufferedReader reader) throws IOException {
 
-    StringBuffer message = new StringBuffer();
+  private synchronized String getMessage(BufferedReader reader) throws IOException {
+
     String line = "";
+    StringBuilder sb = new StringBuilder();
 
-    while ((line = reader.readLine()) != null) {
-      message.append(line);
+    while (!(line = reader.readLine()).equals("")) {
+      sb.append(line).append("\r\n");
+    }
+    System.out.println("====message====");
+    System.out.println(sb.toString());
+    return sb.toString();
+
+  }
+
+  private void startLine(String line) {
+
+    StringTokenizer startLineSplit = new StringTokenizer(line, " ");
+    while (startLineSplit.hasMoreTokens()) {
+      this.method = startLineSplit.nextToken();
+      this.requestUrl = startLineSplit.nextToken();
+      this.version = startLineSplit.nextToken();
     }
 
-    return message.toString();
   }
 
   private boolean parseContent(String data) {
 
-    StringTokenizer st = new StringTokenizer(data, "&");
-    try {
-
-      while (st.hasMoreTokens()) {
-        StringTokenizer pair = new StringTokenizer(st.nextToken(), "=");
-        String key = pair.nextToken();
-        String value = pair.nextToken();
-        content.put(key, value);
+    boolean isKey = true;
+    StringBuilder key = new StringBuilder();
+    StringBuilder value = new StringBuilder();
+    System.out.println("parseContent: " + data);
+    for (int i = 0; i < data.length(); i++) {
+      if (data.charAt(i) == '&') {
+        isKey = true;
+        content.put(key.toString(), value.toString());
+        key = new StringBuilder();
+        value = new StringBuilder();
+        continue;
       }
-    } catch (NoSuchElementException e) {
-      content.clear();
-      return false;
+      if (data.charAt(i) == '=') {
+        isKey = false;
+        continue;
+      }
+      if (isKey) {
+        key.append(data.charAt(i));
+      } else {
+        value.append(data.charAt(i));
+      }
     }
+
+    if (key.length() != 0 && value.length() != 0) {
+      content.put(key.toString(), value.toString());
+    }
+
     return true;
-
-  }
-
-  public Socket getSocket() {
-
-    return socket;
   }
 
 
@@ -154,18 +177,10 @@ public class HttpParsedRequest {
     return header;
   }
 
-
   public Map<String, String> getContent() {
 
     return content;
   }
-
-
-  public void setSocket(Socket socket) {
-
-    this.socket = socket;
-  }
-
 
   public void setVersion(String version) {
 

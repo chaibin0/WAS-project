@@ -5,6 +5,7 @@ public enum ContentType {
   HTML("html", "text/html; charset=UTF-8"),
   TEXT("txt", "text/plain; charset=UTF-8"),
   CSS("css", "text/css"),
+  JS("js", "text/javascript"),
   GIF("gif", "image/gif"),
   JPG("jpg", "image/jpg"),
   JPEG("jpg", "image/jpeg"),
@@ -29,6 +30,17 @@ public enum ContentType {
   public String getMime() {
 
     return mime;
+  }
+
+  public static ContentType fromString(String extension) {
+
+    for (ContentType type : ContentType.values()) {
+      if (type.getExtension().equals(extension)) {
+        return type;
+      }
+    }
+    return ContentType.TEXT;
+
   }
 
   /**

@@ -17,14 +17,13 @@ public class Request implements HttpServletRequest {
 
   private BufferedReader reader;
 
-  private Map<String, String> parameter;
+  private Map<String, String> requestParameter;
 
   private String method;
 
   public Request(HttpParsedRequest parsedRequest) throws IOException {
 
-    reader = new BufferedReader(new InputStreamReader(parsedRequest.getSocket().getInputStream()));
-    parameter = new HashMap<>();
+    requestParameter = new HashMap<>();
     initRequestParameter(parsedRequest);
     method = parsedRequest.getMethod();
     // 미구현
@@ -34,21 +33,22 @@ public class Request implements HttpServletRequest {
   private void initRequestParameter(HttpParsedRequest parsedRequest) {
 
     for (String key : parsedRequest.getContent().keySet()) {
-      parameter.put(key, parsedRequest.getContent().get(key));
+      System.out
+          .println("[key : " + key + ", value : " + parsedRequest.getContent().get(key) + "]");
+      requestParameter.put(key, parsedRequest.getContent().get(key));
     }
   }
 
   @Override
   public String getParameter(String name) {
 
-    return null;
+    return requestParameter.get(name);
   }
 
   @Override
   public String[] getParameterValues(String name) {
 
-
-    return null;
+    return (String[]) requestParameter.keySet().toArray();
   }
 
   @Override

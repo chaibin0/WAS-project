@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import servlet.http.HttpServletRequest;
@@ -26,7 +27,6 @@ public class MyWAS {
     // jar file loader(시간되면 할것)
 
     // xml mapping
-
     WebXml webXml = new WebXml();
     webXml.parseAllWebXml();
     container = Container.getInstance();
@@ -36,19 +36,27 @@ public class MyWAS {
 
       // limit request
       ExecutorService threadFool = Executors.newFixedThreadPool(10);
-
       while (true) {
         Socket clientSocket = wasServer.accept();
-
+        clientSocket.setKeepAlive(true);
         Runnable request = () -> {
           try {
-            System.out.println("***응답***");
             container.requestHttp(clientSocket);
+            clientSocket.close();
           } catch (IOException e) {
+            e.printStackTrace();
+          } catch (NoSuchElementException e) {
+            e.printStackTrace();
+          } catch (InterruptedException e) {
             e.printStackTrace();
           }
         };
-        threadFool.execute(request);
+        Thread thread = new Thread(request);
+
+        System.out.println(thread.getName());
+        threadFool.execute(thread);
+
+
 
       }
     } catch (IOException e) {

@@ -1,10 +1,14 @@
 package server;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -14,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import server.http.HttpParsedRequest;
 import servlet.ServletConfig;
@@ -39,75 +44,114 @@ public class Container {
     return container;
   }
 
-  /**
-   * 
-   * @param clientSocket
-   * @throws IOException
-   */
-  public void requestHttp(Socket clientSocket) throws IOException {
+  public void requestHttp(Socket clientSocket)
+      throws IOException, NoSuchElementException, InterruptedException {
 
     // parsed http message
-    HttpParsedRequest parsedRequest = new HttpParsedRequest(clientSocket);
+    try {
+      BufferedReader reader =
+          new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+      HttpParsedRequest parsedRequest = new HttpParsedRequest(reader);
+      HttpServletRequest request = new Request(parsedRequest);
+      HttpServletResponse response = new Response(clientSocket);
 
-    HttpServletRequest request = new Request(parsedRequest);
-    HttpServletResponse response = new Response(clientSocket);
+      // get URL
+      String url = parsedRequest.getUrl();
+      if (url != null) {
+        dispatch(url, request, response);
+      }
 
-    // get URL
-    String url = parsedRequest.getUrl();
-
-    dispatch(url, request, response);
-
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
+
+
 
   public void dispatch(String url, HttpServletRequest request, HttpServletResponse response) {
 
     Runnable runnable = () -> {
-      if (mappingInfo.getServletPatternToName().containsKey(url)) {
-        executeServlet(url, request, response);
-      } else if (Files.exists(Paths.get("webapps" + urlToPath(url)))) { // 해당프로젝트 파일 존재
-        sendResource(Paths.get("webapps" + urlToPath(url)), response);
-      } else if (Files.exists(Paths.get("resources" + urlToPath(url)))) { // WAS 안에 리소스 파일 존재
-        sendResource(Paths.get("resources" + urlToPath(url)), response);
+      try {
+        if (mappingInfo.getServletPatternToName().containsKey(url)) {
+          executeServlet(url, request, response);
+        } else if (Files.exists(Paths.get("webapps" + urlToPath(url)))) { // 해당프로젝트 파일 존재
+          sendResource(Paths.get("webapps" + urlToPath(url)), response);
+        } else if (Files.exists(Paths.get("resources" + urlToPath(url)))) { // WAS 안에 리소스 파일 존재
+          sendResource(Paths.get("resources" + urlToPath(url)), response);
+        }
+      } catch (FileNotFoundException e) {
+        System.out.println("file이 없습니다");
+      } catch (IOException e) {
+        e.printStackTrace();
       }
     };
 
-    runnable.run();
+
+    Thread thread = new Thread(runnable);
+    thread.run();
+    System.out.println("dispatch Thread : " + thread.getName());
+
   }
 
 
   private String urlToPath(String url) {
 
-    System.out.println(url);
     url.replace('/', '\\');
     return url;
   }
 
-  private void sendResource(Path path, HttpServletResponse response) {
+  private void sendResource(Path path, HttpServletResponse response) throws IOException {
 
     // URL 분석
     String extension = getExtension(path);
-    System.out.println("extension : " + extension);
+    ContentType contentType = ContentType.fromString(extension);
     // contentype 설정
-    response.setHeader("Content-Type", ContentType.getMimeForExtension(extension));
+    response.setHeader("Content-Type", contentType.getMime());
+    switch (contentType) {
+      case JPG:
+        sendImageFile(path, response, contentType);
+      default:
+        sendTextFile(path, response, contentType);
+    }
+
+
+  }
+
+  private synchronized void sendImageFile(Path path, HttpServletResponse response,
+      ContentType contentType) throws IOException {
+
+    response.setHeader("Content-length", String.valueOf(path.toFile().length()));
+
+    try {
+      InputStream inputstream = new FileInputStream(path.toFile());
+      OutputStream outputStream = response.getOutputStream();
+      int content;
+
+      while ((content = inputstream.read()) != -1) {
+        outputStream.write(content);
+      }
+    } finally {
+    }
+
+  }
+
+  private synchronized void sendTextFile(Path path, HttpServletResponse response,
+      ContentType contentType) throws IOException {
 
     // 데이터 전송
-    try (PrintWriter writer = response.getWriter();
-        BufferedReader input =
-            new BufferedReader(new InputStreamReader(new FileInputStream(path.toString())))) {
-
+    try {
+      PrintWriter writer = response.getWriter();
+      BufferedReader input =
+          new BufferedReader(new InputStreamReader(new FileInputStream(path.toString())));
       String line = "";
+
       while ((line = input.readLine()) != null) {
         writer.print(line);
       }
-
       writer.flush();
-      writer.close();
-
-    } catch (FileNotFoundException e) {
-      // 없으면 안보냄
-    } catch (IOException e) {
-      e.printStackTrace();
+    } finally {
     }
+
   }
 
   private String getExtension(Path path) {
@@ -129,7 +173,6 @@ public class Container {
       Class<?> servlet = Class.forName(mappingServlet.getServletClassName());
       Object instance = getServletClass(servlet, servletName);
       invokeServiceMethod(instance, servlet, request, response);
-
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     } catch (SecurityException e) {
@@ -143,6 +186,7 @@ public class Container {
   private void invokeServiceMethod(Object instance, Class<?> servlet, HttpServletRequest request,
       HttpServletResponse response) {
 
+    System.out.println("invokeServiceMethod()");
     try {
       Object[] param = {request, response};
       Class<?>[] typeParam =
@@ -184,6 +228,7 @@ public class Container {
    */
   private void invokeInit(Object instance, Class<?> servlet, String servletName) {
 
+    System.out.println("invokeInit()");
     try {
 
       Class<?>[] typeParam = {servlet.ServletConfig.class};
@@ -206,6 +251,7 @@ public class Container {
 
   private Object createNewInstance(Class<?> servlet, String servletName) {
 
+    System.out.println("createNewInstance()");
     Object instance = null;
     try {
 
