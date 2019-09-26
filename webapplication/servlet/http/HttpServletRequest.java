@@ -6,8 +6,12 @@ import servlet.ServletRequest;
 
 public interface HttpServletRequest extends ServletRequest {
 
-  String getMethod() throws IOException;
+  public String getMethod() throws IOException;
+
+  public HttpSession getSession();
 
   public RequestDispatcher getRequestDispatcher(String path);
+
+  public Cookie[] getCookies();
 
 }

@@ -1,5 +1,8 @@
 package server;
 
+/**
+ * 응답코드를 나타내는 클래스.
+ */
 enum StateCode {
   OK(200, "ok"),
   MOVED_PERMANENTLY(301, "moved permanently"),

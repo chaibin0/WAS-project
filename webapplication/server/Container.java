@@ -1,10 +1,7 @@
 package server;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -20,44 +17,66 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
-import server.http.HttpParsedRequest;
 import servlet.ServletConfig;
+import servlet.ServletContext;
 import servlet.http.HttpServletRequest;
 import servlet.http.HttpServletResponse;
 
-
 public class Container {
 
-  private static Container container = new Container();
+  private static Container container;
 
   private MappingInfo mappingInfo;
 
-  private Map<Class<?>, Object> loadedClass = new HashMap<>();
+  private ServletContext context;
 
+  private Map<Class<?>, Object> loadedClass;
+
+  /**
+   * 컨테이너 처음 초기화하기 위한 생성자. private 생성자로 초기화할 수 없다.
+   */
   private Container() {
 
+    loadedClass = new HashMap<>();
     mappingInfo = new MappingInfo();
+    context = new MyServletContext();
   }
 
+  /**
+   * 컨테이너는 싱글톤이므로 유일한 컨테이너 객체만 반환하고 만약 존재하지 않으면 싱글톤 컨테이너를 생성한다.
+   * 
+   * @return container 싱글톤 객체
+   */
   public static Container getInstance() {
 
+    if (container == null) {
+      container = new Container();
+    }
     return container;
   }
 
+  /**
+   * 클라이언트로부터 요청이 들어올 경우 requestHttp 메소드에서 처리한다.
+   * 
+   * @param clientSocket 클라이언트 소켓
+   * @throws IOException IOException
+   * @throws NoSuchElementException NoSuchElementException { if 서블릿이 존재하지 않을 경우 발생 }
+   * @throws InterruptedException InterruptedException
+   */
   public void requestHttp(Socket clientSocket)
       throws IOException, NoSuchElementException, InterruptedException {
 
     // parsed http message
-    try {
-      BufferedReader reader =
-          new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+    try (BufferedReader reader =
+        new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+
       HttpParsedRequest parsedRequest = new HttpParsedRequest(reader);
       HttpServletRequest request = new Request(parsedRequest);
-      HttpServletResponse response = new Response(clientSocket);
+      HttpServletResponse response = new Response(request, clientSocket);
 
       // get URL
       String url = parsedRequest.getUrl();
-      if (url != null) {
+      if (url != null && !url.isEmpty()) {
         dispatch(url, request, response);
       }
 
@@ -67,32 +86,30 @@ public class Container {
   }
 
 
-
+  /**
+   * 요청된 url를 기반으로 서블릿일 경우 executeServlet을 실행하고 웹어플리케이션 리소스나 해당 프로젝트에 존재하는 파일일 경우 sendResource에서
+   * 실행한다.
+   * 
+   * @param url 요청받은 url-pattern
+   * @param request 서블릿일 경우 HttpServletRequest 객체를 생성한다.
+   * @param response HttpServletResponse 객체를 통해 출력 스트림을 사용한다.
+   */
   public void dispatch(String url, HttpServletRequest request, HttpServletResponse response) {
 
     Runnable runnable = () -> {
-      try {
-        if (mappingInfo.getServletPatternToName().containsKey(url)) {
-          executeServlet(url, request, response);
-        } else if (Files.exists(Paths.get("webapps" + urlToPath(url)))) { // 해당프로젝트 파일 존재
-          sendResource(Paths.get("webapps" + urlToPath(url)), response);
-        } else if (Files.exists(Paths.get("resources" + urlToPath(url)))) { // WAS 안에 리소스 파일 존재
-          sendResource(Paths.get("resources" + urlToPath(url)), response);
-        }
-      } catch (FileNotFoundException e) {
-        System.out.println("file이 없습니다");
-      } catch (IOException e) {
-        e.printStackTrace();
+      if (mappingInfo.containsPattern(url)) {
+        executeServlet(url, request, response);
+      } else if (Files.exists(Paths.get("webapps" + urlToPath(url)))) { // 해당프로젝트 파일 존재
+        sendResource(Paths.get("webapps" + urlToPath(url)), response);
+      } else if (Files.exists(Paths.get("resources" + urlToPath(url)))) { // WAS 안에 리소스 파일 존재
+        sendResource(Paths.get("resources" + urlToPath(url)), response);
       }
     };
 
-
     Thread thread = new Thread(runnable);
     thread.run();
-    System.out.println("dispatch Thread : " + thread.getName());
 
   }
-
 
   private String urlToPath(String url) {
 
@@ -100,7 +117,12 @@ public class Container {
     return url;
   }
 
-  private void sendResource(Path path, HttpServletResponse response) throws IOException {
+  /**
+   * 서블릿이 아닌 파일들을 클라이언트에게 전송한다. path 경로를 분석해서 contenType에 따라 다르게 전송한다.
+   * 
+   * @see Container#dispatch(String, HttpServletRequest, HttpServletResponse)
+   */
+  private void sendResource(Path path, HttpServletResponse response) {
 
     // URL 분석
     String extension = getExtension(path);
@@ -109,51 +131,67 @@ public class Container {
     response.setHeader("Content-Type", contentType.getMime());
     switch (contentType) {
       case JPG:
+      case ICO:
+      case PNG:
+      case GIF:
         sendImageFile(path, response, contentType);
+        break;
+
       default:
         sendTextFile(path, response, contentType);
+
     }
-
-
   }
 
+  /**
+   * 이미지 파일일 경우 OutputStream을 통해 전송한다.
+   * 
+   * @see Container#sendResource(Path, HttpServletResponse)
+   */
   private synchronized void sendImageFile(Path path, HttpServletResponse response,
-      ContentType contentType) throws IOException {
+      ContentType contentType) {
 
     response.setHeader("Content-length", String.valueOf(path.toFile().length()));
 
-    try {
-      InputStream inputstream = new FileInputStream(path.toFile());
+    try (InputStream inputstream = new FileInputStream(path.toFile())) {
       OutputStream outputStream = response.getOutputStream();
       int content;
 
       while ((content = inputstream.read()) != -1) {
         outputStream.write(content);
       }
-    } finally {
+    } catch (IOException e) {
+      e.printStackTrace();
     }
 
   }
 
+  /**
+   * 텍스트 파일일 경우 BufferedReader스트림을 통해 전송한다.
+   * 
+   * @see Container#sendResource(Path, HttpServletResponse)
+   */
   private synchronized void sendTextFile(Path path, HttpServletResponse response,
-      ContentType contentType) throws IOException {
+      ContentType contentType) {
 
     // 데이터 전송
-    try {
-      PrintWriter writer = response.getWriter();
-      BufferedReader input =
-          new BufferedReader(new InputStreamReader(new FileInputStream(path.toString())));
-      String line = "";
+    try (BufferedReader input =
+        new BufferedReader(new InputStreamReader(new FileInputStream(path.toString())))) {
 
+      PrintWriter writer = response.getWriter();
+      String line = "";
       while ((line = input.readLine()) != null) {
         writer.print(line);
       }
       writer.flush();
-    } finally {
+    } catch (IOException e) {
+      e.printStackTrace();
     }
-
   }
 
+  /**
+   * url 경로에 대한 확장자를 구한다.
+   */
   private String getExtension(Path path) {
 
     String extension = "";
@@ -164,36 +202,43 @@ public class Container {
     return extension;
   }
 
+  /**
+   * 요청 받은 url이 서블릿일 경우 HttpServletRequest와 HttpServletResponse를 가져와서 요청한 servlet을 수행한다.
+   * 
+   * @param url url
+   * @param request instantiated HttpServletRequest
+   * @param response instantiated HttpServletResponse
+   */
   public void executeServlet(String url, HttpServletRequest request, HttpServletResponse response) {
 
-    String servletName = mappingInfo.getServletPatternToName().get(url);
-    MappingServlet mappingServlet = mappingInfo.getServletNameToClass().get(servletName);
+    String servletName = mappingInfo.getServletName(url);
+    MappingServlet mappingServlet = mappingInfo.getServletClassType(servletName);
 
     try {
       Class<?> servlet = Class.forName(mappingServlet.getServletClassName());
       Object instance = getServletClass(servlet, servletName);
       invokeServiceMethod(instance, servlet, request, response);
     } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    } catch (SecurityException e) {
-      e.printStackTrace();
-    } catch (IllegalArgumentException e) {
+      System.out.println("서블릿이 존재하지 않습니다.");
       e.printStackTrace();
     }
 
   }
 
+  /**
+   * service() 메소드를 invoke한다.
+   * 
+   */
   private void invokeServiceMethod(Object instance, Class<?> servlet, HttpServletRequest request,
       HttpServletResponse response) {
 
-    System.out.println("invokeServiceMethod()");
     try {
       Object[] param = {request, response};
       Class<?>[] typeParam =
           {servlet.http.HttpServletRequest.class, servlet.http.HttpServletResponse.class};
+
       Method method = servlet.getSuperclass().getDeclaredMethod("service", typeParam);
       method.invoke(instance, param);
-
     } catch (NoSuchMethodException e) {
       e.printStackTrace();
     } catch (SecurityException e) {
@@ -208,6 +253,10 @@ public class Container {
 
   }
 
+  /**
+   * 서블릿이 한번도 로드하지 않았으면 서블릿을 인스턴스화 시킨다.
+   * 
+   */
   private Object getServletClass(Class<?> servlet, String servletName) {
 
     if (!loadedClass.containsKey(servlet)) {
@@ -220,20 +269,16 @@ public class Container {
   }
 
   /**
-   * 서블릿이 한번도 초기화되지 않았다면 init를 실행해주고 ServletConfig를 초기화 해준다.
+   * 서블릿 인스턴스화가 되었을 경우 init()메소드를 실행해서 servletConfig를 초기화한다.
    * 
-   * @param instance servlet object
-   * @param servlet servlet class type
-   * @param servletName servlet name
    */
   private void invokeInit(Object instance, Class<?> servlet, String servletName) {
 
-    System.out.println("invokeInit()");
     try {
 
       Class<?>[] typeParam = {servlet.ServletConfig.class};
       Method init = servlet.getSuperclass().getSuperclass().getDeclaredMethod("init", typeParam);
-      ServletConfig config = mappingInfo.getInitParameter(servletName);
+      ServletConfig config = mappingInfo.getServletConfig(servletName);
       init.invoke(instance, config);
     } catch (NoSuchMethodException e) {
       e.printStackTrace();
@@ -249,9 +294,11 @@ public class Container {
 
   }
 
+  /**
+   * 서블릿을 인스턴스화하고 loadedClass에 인스턴스한 객체를 저장한다.
+   */
   private Object createNewInstance(Class<?> servlet, String servletName) {
 
-    System.out.println("createNewInstance()");
     Object instance = null;
     try {
 
@@ -270,15 +317,23 @@ public class Container {
 
   }
 
-  public void annotaionMapping() {
-
-  }
-
+  /**
+   * MappingInfo 객체를 반환하는 메소드.
+   * 
+   * @return
+   */
   public MappingInfo getMappingInfo() {
 
     return mappingInfo;
   }
 
+  /**
+   * ServletContext를 반환하는 메소드.
+   */
+  public ServletContext getServletContext() {
+
+    return context;
+  }
 
 
 }

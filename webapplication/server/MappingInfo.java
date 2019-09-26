@@ -1,12 +1,12 @@
 package server;
 
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import servlet.ServletConfig;
 
+/**
+ * Web.xml을 통해 받은 정보들을 MappingInfo 클래스를 통해 저장한다.
+ */
 public class MappingInfo {
 
   private Map<String, MappingServlet> servletNameToClass;
@@ -14,7 +14,7 @@ public class MappingInfo {
   private Map<String, String> servletPatternToName;
 
   /**
-   * initialize reference variable.
+   * 객체를 생성하고 인스턴스 변수들을 초기화한다.
    */
   public MappingInfo() {
 
@@ -22,145 +22,54 @@ public class MappingInfo {
     servletPatternToName = new HashMap<>();
   }
 
-  public void mapping(Path directory, Xml xml) throws Exception {
+  /**
+   * 서블릿 이름을 통해서 ServletConfig에 필요한 데이터를 초기화하고 반환한다.
+   * 
+   * @param servletName 서블릿 이름
+   * @return
+   */
+  public ServletConfig getServletConfig(String servletName) {
 
-    for (Xml subTag : xml.getSubTag()) {
-      switch (subTag.getTagName()) {
-        case "servlet":
-          mappingServletNameToClass(subTag);
-          break;
-        case "servlet-mapping":
-          mappingServletPatternToName(directory, subTag);
-          break;
-        // filter부터 이어서 할것
-        default:
-      }
-    }
-  }
-
-  private void mappingServletToFilter() {
-
-  }
-
-  private void mappingFilterNameToClass() {
-
+    return new MyServletConfig(servletName, getServletInitParamter(servletName));
   }
 
   /**
-   * sub Tag of servlet. If subTag have servlet name, pattern will map url.
-   * 
-   * @param directory  path of directory
-   * @param xmlServletMappingInfo servlet-name and url-pattern infomation
+   * 서블릿에 저장된 초기화 파라미터를 가져온다.
    */
-  private void mappingServletPatternToName(Path directory, Xml xmlServletMappingInfo) {
+  private Map<String, String> getServletInitParamter(String servletName) {
 
-    List<String> patterns = new ArrayList<>();
-    String servletName = "";
-
-    for (Xml subTag : xmlServletMappingInfo.getSubTag()) {
-      switch (subTag.getTagName()) {
-        case "servlet-name":
-          servletName = subTag.getValue();
-          break;
-        case "url-pattern":
-          patterns.add("/" + directory.getFileName() + subTag.getValue());
-          break;
-        default:
-      }
-    }
-
-    if (servletName.isEmpty() || patterns.isEmpty()) {
-      System.out.println("Servlet-Mapping error");
-    }
-
-    for (String pattern : patterns) {
-      if (servletPatternToName.containsKey(pattern)) {
-        System.out.println("중복된 key");
-        return;
-      }
-      servletPatternToName.put(pattern, servletName);
-    }
+    return servletNameToClass.get(servletName).getInitParameter();
   }
 
-  private void mappingServletNameToClass(Xml xmlServletInfo) throws Exception {
-
-    MappingServlet servlet = new MappingServlet();
-    String servletName = "";
-    for (Xml subTag : xmlServletInfo.getSubTag()) {
-      switch (subTag.getTagName()) {
-        case "description":
-          servlet.setDescription(subTag.getValue());
-          break;
-        case "servlet-name":
-          servletName = subTag.getValue();
-          break;
-        case "load-on-startup":
-          servlet.setLoadOnStartup(Integer.parseInt(subTag.getValue()));
-          break;
-        case "servlet-class":
-          servlet.setServletClassName(subTag.getValue());
-          break;
-        case "init-param":
-          mappingServletInitParameter(servlet, subTag);
-          break;
-        default:
-          // faultXmlInfoError
-      }
-    }
-
-    if (servletNameToClass.containsKey(servletName)) {
-      System.out.println("servletName : " + servletName + " 이미 존재하는 서블릿 이름입니다.");
-      return;
-    }
+  public void setServletClass(String servletName, MappingServlet servlet) {
 
     servletNameToClass.put(servletName, servlet);
   }
 
-  private void mappingServletInitParameter(MappingServlet servlet, Xml xmlServletInit)
-      throws Exception {
+  public void setUrlPattern(String urlPattern, String servletName) {
 
-    String key = "";
-    String value = "";
-
-    for (Xml subTag : xmlServletInit.getSubTag()) {
-      switch (subTag.getTagName()) {
-        case "param-name":
-          key = subTag.getValue();
-          break;
-        case "param-value":
-          value = subTag.getValue();
-          break;
-
-        default:
-          // faultXmlInfoError
-      }
-    }
-
-    if (key.isEmpty() || value.isEmpty())
-      throw new Exception("매핑 에러");
-
-    servlet.getInitParameter().put(key, value);
+    servletPatternToName.put(urlPattern, servletName);
   }
 
-  public ServletConfig getInitParameter(String servletName) {
+  public boolean containsServletClassType(String servletName) {
 
-    Map<String, String> initParameter = servletNameToClass.get(servletName).getInitParameter();
-    ServletConfig config = new MyServletConfig(servletName, initParameter);
-    return config;
+    return servletNameToClass.containsKey(servletName);
   }
 
-  public Map<String, MappingServlet> getServletNameToClass() {
+  public boolean containsPattern(String url) {
 
-    return servletNameToClass;
+    return servletPatternToName.containsKey(url);
   }
 
+  public String getServletName(String url) {
 
-  public Map<String, String> getServletPatternToName() {
-
-    return servletPatternToName;
+    return servletPatternToName.get(url);
   }
 
+  public MappingServlet getServletClassType(String servletName) {
 
+    return servletNameToClass.get(servletName);
+  }
 }
 
 

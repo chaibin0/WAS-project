@@ -1,6 +1,12 @@
 package servlet;
 
+import java.util.Enumeration;
 
-public class ServletContext {
+public interface ServletContext {
 
+  public String getInitParameter(String name);
+
+  public Enumeration<String> getInitParameterNames();
+
+  public boolean setInitParameter(String name, String value);
 }

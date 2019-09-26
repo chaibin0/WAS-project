@@ -6,6 +6,7 @@ import servlet.RequestDispatcher;
 import servlet.http.HttpServlet;
 import servlet.http.HttpServletRequest;
 import servlet.http.HttpServletResponse;
+import servlet.http.HttpSession;
 
 public class TestServlet extends HttpServlet {
 
@@ -21,16 +22,27 @@ public class TestServlet extends HttpServlet {
     // out.println("<!DOCTYPE html> <html> <head></head><body><h1>하하하하</h1></body></html>");
     // out.flush();
     // out.close();
-    // RequestDispatcher dispatcher = request.getRequestDispatcher("/test2/test2");
-    response.sendRedirect("test.html");
-    // dispatcher.forward(request, response);
+    System.out.println(this.getInitParameter("color"));
+    System.out.println(this.getServletContext().getInitParameter("color"));
+    RequestDispatcher dispatcher = request.getRequestDispatcher("/test/test.html");
+    dispatcher.forward(request, response);
 
+    // response.sendRedirect("test.html");
   }
 
   protected void doPost(HttpServletRequest request, HttpServletResponse response)
       throws IOException {
+    
+    System.out.println("post실행 : " + request.getParameter("lastname"));
+//    PrintWriter out = response.getWriter();
+//    out.println("<h2> 성공</h2>");
+//    out.flush();
+//    out.close();
+     response.sendRedirect("success.html");
+    // response.getWriter().println("ㅎㅎㅎ");
+    // response.getWriter().flush();
+    // response.getWriter().close();
 
-    System.out.println(request.getParameter("color"));
   }
 
 }

@@ -2,8 +2,14 @@ package server;
 
 import java.util.HashMap;
 import java.util.Map;
+import servlet.http.HttpServlet;
 
-class MappingServlet {
+/**
+ * Web.xml을 통해 만들어진 MappingServlet이다.
+ */
+class MappingServlet extends HttpServlet {
+
+  private static final long serialVersionUID = 5142307503305479381L;
 
   int loadOnStartup;
 
@@ -55,5 +61,10 @@ class MappingServlet {
   public Map<String, String> getInitParameter() {
 
     return initParameter;
+  }
+
+  public void setInitParameter(String name, String value) {
+
+    initParameter.put(name, value);
   }
 }

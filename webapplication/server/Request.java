@@ -2,18 +2,19 @@ package server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
-import server.http.HttpParsedRequest;
 import servlet.RequestDispatcher;
 import servlet.ServletInputStream;
+import servlet.http.Cookie;
 import servlet.http.HttpServletRequest;
 import servlet.http.HttpServletResponse;
+import servlet.http.HttpSession;
 
+/**
+ * HttpServletRequest 인터페이스를 구현한 객체 클래스이다.
+ */
 public class Request implements HttpServletRequest {
-
-  private ServletInputStream servletInputStream;
 
   private BufferedReader reader;
 
@@ -21,6 +22,12 @@ public class Request implements HttpServletRequest {
 
   private String method;
 
+  /**
+   * Request 객체를 초기화하고 인스턴스 변수들을 초기화한다.
+   * 
+   * @param parsedRequest HttpRequest 메시지를 저장한 클래스
+   * @throws IOException IOException
+   */
   public Request(HttpParsedRequest parsedRequest) throws IOException {
 
     requestParameter = new HashMap<>();
@@ -30,13 +37,20 @@ public class Request implements HttpServletRequest {
     // servletInputStream = new ServletInputStreamImpl(clientSocket);
   }
 
+  /**
+   * Request메시지를 통해 requestParameter 데이터를 가져온다.(방어적 복사를 통해 가져옴)
+   */
   private void initRequestParameter(HttpParsedRequest parsedRequest) {
 
-    for (String key : parsedRequest.getContent().keySet()) {
-      System.out
-          .println("[key : " + key + ", value : " + parsedRequest.getContent().get(key) + "]");
-      requestParameter.put(key, parsedRequest.getContent().get(key));
+    for (String key : parsedRequest.getContentKeys()) {
+      requestParameter.put(key, parsedRequest.getContent(key));
     }
+  }
+
+  @Override
+  public Cookie[] getCookies() {
+
+    return null;
   }
 
   @Override
@@ -90,4 +104,11 @@ public class Request implements HttpServletRequest {
       }
     };
   }
+
+  @Override
+  public HttpSession getSession() {
+
+    return null;
+  }
+
 }

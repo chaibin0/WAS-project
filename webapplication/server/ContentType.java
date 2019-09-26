@@ -1,6 +1,10 @@
 package server;
 
 
+/**
+ * url 요청을 통해 받은 정적 데이터들을 확장자를 통해 ContentType을 변경하기 위한 클래스.
+ *
+ */
 public enum ContentType {
   HTML("html", "text/html; charset=UTF-8"),
   TEXT("txt", "text/plain; charset=UTF-8"),
@@ -32,6 +36,12 @@ public enum ContentType {
     return mime;
   }
 
+  /**
+   * 확장자를 통해서 ContentType을 구하는 메소드이다. 
+   * 
+   * @param extension 확장자 {html,jpg}
+   * @return ContentType ContentType enum을 반환
+   */
   public static ContentType fromString(String extension) {
 
     for (ContentType type : ContentType.values()) {
@@ -39,15 +49,16 @@ public enum ContentType {
         return type;
       }
     }
+    //default conttent type
     return ContentType.TEXT;
 
   }
 
   /**
-   * get MIME using extension. if extension is html, return "text/html".
+   *  확장자를 통해 mime타입을 구하는 메소드.
    * 
-   * @param extension extension
-   * @return contentType to String
+   * @param extension extension 확장자 {html,jpg}
+   * @return ContentType 문자열을 반환한다.
    */
   public static String getMimeForExtension(String extension) {
 
@@ -56,6 +67,6 @@ public enum ContentType {
         return type.mime;
       }
     }
-    return "text/plain";
+    return HTML.mime;
   }
 }

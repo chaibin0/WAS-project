@@ -2,38 +2,39 @@ package server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-import java.util.Map;
 
 public class XmlParser {
 
-  private Deque<String> checkXml = new ArrayDeque<>();
+  private static final char OPEN_ANGLE = '<';
 
-  private final char OPEN_ANGLE = '<';
+  private static final char DECLARE_CHAR = '?';
 
-  private final char DECLARE_CHAR = '?';
+  private static final String END_TAG = "</";
 
-  private final String END_TAG = "</";
+  private static final char CLOSE_ANGLE = '>';
 
-  private final char CLOSE_ANGLE = '>';
-
-  private static char WHITE_SPACE = ' ';
+  private static final char WHITE_SPACE = ' ';
 
   private Xml root = new Xml(null, "");
 
   private Xml iterator = root;
 
+  private String header = "";
 
+  /**
+   * 문자열 입력 스트림을 통해서 xml을 String에 저장한다.
+   * 
+   * @param reader 문자열 입력 스트림
+   * @return xml이 저장된 문자열
+   * @throws IOException IOException
+   */
   public String getFiles(BufferedReader reader) throws IOException {
 
-    String header = "";
     StringBuilder xml = new StringBuilder();
     String line = "";
+    // xml 선언문
     if ((header = reader.readLine()) != null) {
-      // 헤더분석
+
 
       // xml 통채로 저장
       while ((line = reader.readLine()) != null) {
@@ -43,10 +44,20 @@ public class XmlParser {
     return xml.toString();
   }
 
+  /**
+   * Xml파일을 파싱한다. 재귀함수를 통해 파싱이 된다.
+   * 
+   * @param xmlData xml 문서
+   * @param startIdx 시작 위치
+   * @param endIdx 끝 위치
+   * @return Xml를 반환한다.
+   */
   public Xml parse(String xmlData, int startIdx, int endIdx) {
 
     int pos = startIdx;
     StringBuilder data = new StringBuilder();
+    StringBuilder attribute = new StringBuilder();
+
     boolean isTagName = true;
 
     while (startIdx < endIdx) {
@@ -55,7 +66,6 @@ public class XmlParser {
       // tag
       if (xmlData.charAt(startIdx) == OPEN_ANGLE) {
         StringBuilder startTag = new StringBuilder();
-        StringBuilder attribute = new StringBuilder();
         StringBuilder endTag = new StringBuilder(END_TAG);
         int nextStartIdx = 0;
         int nextEndIdx = 0;
@@ -77,10 +87,7 @@ public class XmlParser {
           }
         }
 
-        System.out.println("start : " + startTag.toString());
         endTag.append(startTag).append('>');
-        System.out.println("end : " + endTag.toString());
-        System.out.println("attribute : " + attribute.toString());
 
         int endTagLength = endTag.length();
         // end Tag 찾기
@@ -91,6 +98,7 @@ public class XmlParser {
             data = new StringBuilder();
             iterator.getSubTag().add(subXml);
             iterator = subXml;
+
             nextEndIdx = pos;
             parse(xmlData, nextStartIdx, nextEndIdx);
             startIdx = pos + endTagLength;
@@ -102,10 +110,8 @@ public class XmlParser {
       }
       startIdx++;
     }
-
+    iterator.parseAndSetAttributes(attribute.toString());
     iterator.setValue(data.toString());
-    data = null;
-
     iterator = iterator.getParent();
     return root;
   }

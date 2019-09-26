@@ -3,13 +3,14 @@ package server;
 
 public class Main {
 
+  private static final int PORT = 8080;
+
   /**
-   * Run the web application.
-   * @throws InterruptedException 
+   * Web Application Server를 포트를 지정하고 시작한다.
    */
   public static final void main(String[] args) {
 
-    MyWAS myWas = new MyWAS(8080);
+    MyWas myWas = new MyWas(PORT);
     myWas.start();
 
   }
