@@ -116,7 +116,7 @@ public class HttpParsedRequest {
     String line = "";
     StringBuilder sb = new StringBuilder();
 
-    while (!(line = reader.readLine()).equals("")) {
+    while (reader.ready() && !(line = reader.readLine()).equals("")) {
       sb.append(line).append(LINE);
     }
     reader = null;

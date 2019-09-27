@@ -32,6 +32,4 @@ public class Cookie {
 
     this.value = value;
   }
-
-
 }

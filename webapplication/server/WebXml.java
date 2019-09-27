@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import servlet.ServletContext;
 
@@ -109,8 +108,13 @@ public class WebXml {
         case "context-param":
           xmlMappingContextParam(directory, subTag);
           break;
-
         // filter부터 이어서 할것
+        case "filter":
+          xmlMappingFilterNameToClass(directory, subTag);
+          break;
+        case "filter-mapping":
+          xmlMappingFilterPattern(directory, subTag);
+          break;
         default:
       }
     }
@@ -145,12 +149,50 @@ public class WebXml {
     context.setInitParameter(name, value);
   }
 
-  private void xmlMappingServletToFilter() {
+  private void xmlMappingFilterPattern(Path directory, Xml filterMapping) {
 
+    List<String> patterns = new ArrayList<>();
+
+    String filterName = "";
+    for (Xml subTag : filterMapping.getSubTag()) {
+      switch (subTag.getTagName()) {
+        case "url-pattern":
+          patterns.add("/" + directory.getFileName() + subTag.getValue());
+          break;
+        case "filter-name":
+          filterName = subTag.getValue();
+          break;
+
+        default:
+          // faultXmlInfoError
+      }
+    }
+    for (String pattern : patterns) {
+      mappingInfo.setFilterPattern(pattern, filterName);
+    }
   }
 
-  private void xmlMappingFilterNameToClass() {
+  private void xmlMappingFilterNameToClass(Path directory, Xml filter) {
 
+    MappingFilter mappingFilter = new MappingFilter();
+    String name = "";
+    String className = "";
+    for (Xml subTag : filter.getSubTag()) {
+      switch (subTag.getTagName()) {
+        case "filter-name":
+          name = subTag.getValue();
+          break;
+        case "filter-class":
+          className = subTag.getValue();
+          mappingFilter.setFilterClassName(subTag.getValue());
+          break;
+        default:
+          // faultXmlInfoError
+      }
+    }
+    if (!name.isEmpty() && !className.isEmpty()) {
+      mappingInfo.setFilterClass(name, mappingFilter);
+    }
   }
 
   /**
@@ -172,17 +214,16 @@ public class WebXml {
         default:
       }
     }
-
     if (servletName.isEmpty() || patterns.isEmpty()) {
       System.out.println("Servlet-Mapping error");
     }
 
     for (String pattern : patterns) {
-      if (mappingInfo.containsPattern(pattern)) {
+      if (mappingInfo.containsServletPattern(pattern)) {
         System.out.println("중복된 key");
         return;
       }
-      mappingInfo.setUrlPattern(pattern, servletName);
+      mappingInfo.setUrlServletPattern(pattern, servletName);
     }
   }
 

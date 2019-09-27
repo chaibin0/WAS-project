@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns="http://xmlns.jcp.org/xml/ns/javaee"
 	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
@@ -7,7 +8,7 @@
 
 	<servlet>
 		<description>
-  	</description>
+		</description>
 		<servlet-name>test</servlet-name>
 		<servlet-class>test.TestServlet</servlet-class>
 		<init-param>
@@ -15,9 +16,7 @@
 			<param-value>value</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
-
 	</servlet>
-
 	<servlet-mapping>
 		<servlet-name>test</servlet-name>
 		<url-pattern>/test</url-pattern>
@@ -26,7 +25,6 @@
 		<param-name>color</param-name>
 		<param-value>yellow</param-value>
 	</context-param>
-
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
 		<welcome-file>index.htm</welcome-file>
@@ -35,5 +33,20 @@
 		<welcome-file>default.htm</welcome-file>
 		<welcome-file>default.jsp</welcome-file>
 	</welcome-file-list>
-
+	<filter>
+		<filter-name>testfilter</filter-name>
+		<filter-class>test.TestFilter</filter-class>
+	</filter>
+	<filter>
+		<filter-name>testfilter2</filter-name>
+		<filter-class>test.TestFilter2</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>testfilter</filter-name>
+		<url-pattern>/test</url-pattern>
+	</filter-mapping>
+		<filter-mapping>
+		<filter-name>testfilter2</filter-name>
+		<url-pattern>/test</url-pattern>
+	</filter-mapping>
 </web-app>

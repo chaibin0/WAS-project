@@ -1,6 +1,8 @@
 package server;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import servlet.ServletConfig;
 
@@ -13,6 +15,10 @@ public class MappingInfo {
 
   private Map<String, String> servletPatternToName;
 
+  private Map<String, MappingFilter> filterNameToClass;
+
+  private Map<String, List<String>> filterPattern;
+
   /**
    * 객체를 생성하고 인스턴스 변수들을 초기화한다.
    */
@@ -20,6 +26,8 @@ public class MappingInfo {
 
     servletNameToClass = new HashMap<>();
     servletPatternToName = new HashMap<>();
+    filterNameToClass = new HashMap<>();
+    filterPattern = new HashMap<>();
   }
 
   /**
@@ -46,7 +54,7 @@ public class MappingInfo {
     servletNameToClass.put(servletName, servlet);
   }
 
-  public void setUrlPattern(String urlPattern, String servletName) {
+  public void setUrlServletPattern(String urlPattern, String servletName) {
 
     servletPatternToName.put(urlPattern, servletName);
   }
@@ -56,7 +64,7 @@ public class MappingInfo {
     return servletNameToClass.containsKey(servletName);
   }
 
-  public boolean containsPattern(String url) {
+  public boolean containsServletPattern(String url) {
 
     return servletPatternToName.containsKey(url);
   }
@@ -70,6 +78,30 @@ public class MappingInfo {
 
     return servletNameToClass.get(servletName);
   }
+
+  public MappingFilter getFilterClass(String filterName) {
+
+    return filterNameToClass.get(filterName);
+  }
+
+  public void setFilterClass(String filterName, MappingFilter filterClass) {
+
+    filterNameToClass.put(filterName, filterClass);
+  }
+
+
+  public List<String> getFilterPattern(String urlPattern) {
+
+    return filterPattern.getOrDefault(urlPattern, new ArrayList<>());
+  }
+
+  public void setFilterPattern(String urlPattern, String filterName) {
+
+    List<String> filterNames = filterPattern.getOrDefault(urlPattern, new ArrayList<>());
+    filterNames.add(filterName);
+    filterPattern.put(urlPattern, filterNames);
+  }
+
 }
 
 

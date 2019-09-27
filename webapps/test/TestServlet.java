@@ -18,12 +18,9 @@ public class TestServlet extends HttpServlet {
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws IOException {
 
-    // PrintWriter out = response.getWriter();
-    // out.println("<!DOCTYPE html> <html> <head></head><body><h1>하하하하</h1></body></html>");
-    // out.flush();
-    // out.close();
-    System.out.println(this.getInitParameter("color"));
-    System.out.println(this.getServletContext().getInitParameter("color"));
+    // System.out.println(this.getInitParameter("color"));
+    // System.out.println(this.getServletContext().getInitParameter("color"));
+    
     RequestDispatcher dispatcher = request.getRequestDispatcher("/test/test.html");
     dispatcher.forward(request, response);
 
@@ -32,13 +29,18 @@ public class TestServlet extends HttpServlet {
 
   protected void doPost(HttpServletRequest request, HttpServletResponse response)
       throws IOException {
-    
-    System.out.println("post실행 : " + request.getParameter("lastname"));
-//    PrintWriter out = response.getWriter();
-//    out.println("<h2> 성공</h2>");
-//    out.flush();
-//    out.close();
-     response.sendRedirect("success.html");
+
+    PrintWriter out = response.getWriter();
+    out.println("<!DOCTYPE html> <html> <head></head><body><h1>날라온 메시지 "
+        + request.getParameter("lastname") + "</h1></body></html>");
+    out.flush();
+    out.close();
+
+    // PrintWriter out = response.getWriter();
+    // out.println("<h2> 성공</h2>");
+    // out.flush();
+    // out.close();
+    // response.sendRedirect("success.html");
     // response.getWriter().println("ㅎㅎㅎ");
     // response.getWriter().flush();
     // response.getWriter().close();

@@ -57,12 +57,9 @@ public class XmlParser {
     int pos = startIdx;
     StringBuilder data = new StringBuilder();
     StringBuilder attribute = new StringBuilder();
-
     boolean isTagName = true;
-
     while (startIdx < endIdx) {
       isTagName = true;
-
       // tag
       if (xmlData.charAt(startIdx) == OPEN_ANGLE) {
         StringBuilder startTag = new StringBuilder();
@@ -79,7 +76,6 @@ public class XmlParser {
             nextStartIdx = pos + 1;
             break;
           }
-
           if (isTagName) {
             startTag.append(xmlData.charAt(pos));
           } else {
@@ -88,7 +84,6 @@ public class XmlParser {
         }
 
         endTag.append(startTag).append('>');
-
         int endTagLength = endTag.length();
         // end Tag 찾기
         for (pos = pos + 1; pos < endIdx - endTagLength; pos++) {

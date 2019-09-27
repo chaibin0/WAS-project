@@ -13,13 +13,18 @@
 	<p>이미지 테스트</p>
 	<img alt="" src="images/hos.jpg">
 
-	<h2>form 테스트</h2>
+
+	<h2>form 테스트(POST)</h2>
 	<form method="POST" action="test">
-		First name: <input type="text" value="Mickey"><br> Last
-		name: <input type="text" name="lastname" value="Mouse"><br>
+		yourName <input type="text" name="lastname" value="Mouse"><br>
 		<input type="submit" value="Submit">
 	</form>
-	
-	<a href="/test2/test2">이동하기!!</a>
+
+	<h2>form 테스트(GET)</h2>
+	<form action="test">
+		yourName <input type="text" name="lastname" value="Mouse"><br>
+		<input type="submit" value="Submit">
+	</form>
+	<a href="/test2/test2">GET링크</a>
 </body>
 </html>

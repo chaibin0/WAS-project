@@ -11,13 +11,13 @@ class MappingServlet extends HttpServlet {
 
   private static final long serialVersionUID = 5142307503305479381L;
 
-  int loadOnStartup;
+  private int loadOnStartup;
 
-  String description;
+  private String description;
 
-  String servletClassName;
+  private String servletClassName;
 
-  Map<String, String> initParameter;
+  private Map<String, String> initParameter;
 
   public MappingServlet() {
 

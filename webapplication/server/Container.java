@@ -97,8 +97,10 @@ public class Container {
   public void dispatch(String url, HttpServletRequest request, HttpServletResponse response) {
 
     Runnable runnable = () -> {
-      if (mappingInfo.containsPattern(url)) {
-        executeServlet(url, request, response);
+      if (mappingInfo.containsServletPattern(url)) {
+        System.out.println("dispatch : " + url);
+        executeFilter(url, request, response);
+        // executeServlet(url, request, response);
       } else if (Files.exists(Paths.get("webapps" + urlToPath(url)))) { // 해당프로젝트 파일 존재
         sendResource(Paths.get("webapps" + urlToPath(url)), response);
       } else if (Files.exists(Paths.get("resources" + urlToPath(url)))) { // WAS 안에 리소스 파일 존재
@@ -202,19 +204,28 @@ public class Container {
     return extension;
   }
 
+
+  public void executeFilter(String url, HttpServletRequest request, HttpServletResponse response) {
+
+    try {
+      MyFilter filter = new MyFilter(url);
+      filter.doFilter(request, response);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
   /**
    * 요청 받은 url이 서블릿일 경우 HttpServletRequest와 HttpServletResponse를 가져와서 요청한 servlet을 수행한다.
    * 
    * @param url url
-   * @param request instantiated HttpServletRequest
-   * @param response instantiated HttpServletResponse
    */
   public void executeServlet(String url, HttpServletRequest request, HttpServletResponse response) {
 
-    String servletName = mappingInfo.getServletName(url);
-    MappingServlet mappingServlet = mappingInfo.getServletClassType(servletName);
-
+    System.out.println("executeServlet");
     try {
+      String servletName = mappingInfo.getServletName(url);
+      MappingServlet mappingServlet = mappingInfo.getServletClassType(servletName);
       Class<?> servlet = Class.forName(mappingServlet.getServletClassName());
       Object instance = getServletClass(servlet, servletName);
       invokeServiceMethod(instance, servlet, request, response);
