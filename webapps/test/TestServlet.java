@@ -20,7 +20,6 @@ public class TestServlet extends HttpServlet {
 
     // System.out.println(this.getInitParameter("color"));
     // System.out.println(this.getServletContext().getInitParameter("color"));
-    
     RequestDispatcher dispatcher = request.getRequestDispatcher("/test/test.html");
     dispatcher.forward(request, response);
 

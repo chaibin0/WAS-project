@@ -11,6 +11,7 @@ public class MyFilter {
 
   private MyFilterChain filterChain;
 
+  private MappingInfo mappingInfo;
 
   private String url;
 
@@ -18,6 +19,7 @@ public class MyFilter {
 
     this.url = url;
     container = Container.getInstance();
+    mappingInfo = container.getMappingInfo();
     makeFilterChain();
   }
 
@@ -29,8 +31,8 @@ public class MyFilter {
       filterChain = new MyFilterChain(url);
       MyFilterChain iterator = filterChain;
       for (String filterName : filterNames) {
-        iterator.setFilter(Class
-            .forName(container.getMappingInfo().getFilterClass(filterName).getFilterClassName()));
+        iterator
+            .setFilter(Class.forName(mappingInfo.getFilterClass(filterName).getFilterClassName()));
         iterator.setNext(new MyFilterChain(url));
         iterator = filterChain.getNext();
       }

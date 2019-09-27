@@ -22,16 +22,13 @@ public class Response implements HttpServletResponse {
 
   private static final String LINE = "\r\n";
 
-  StateCode stateCode;
+  private StateCode stateCode;
 
-  ContentType contentType;
+  private ContentType contentType;
 
-  Socket clientSocket;
+  private Socket clientSocket;
 
-  Map<String, String> responseHeader = new HashMap<>();
-
-  String httpVersion;
-
+  private Map<String, String> responseHeader = new HashMap<>();
 
   /**
    * Response 객체를 생성하고 초기화한다.
@@ -39,23 +36,24 @@ public class Response implements HttpServletResponse {
    * @param request HttpServletRequest 정보
    * @param clientSocket 클라이언트 소켓
    */
-  public Response(HttpServletRequest request, Socket clientSocket) {
+  public Response(Socket clientSocket, HttpServletRequest request) {
 
     stateCode = StateCode.OK;
     contentType = ContentType.HTML;
     this.clientSocket = clientSocket;
+    setInitHeaderDefault();
 
-    setInitHeaderDefault(request);
   }
 
   /**
    * 기본 헤더 정보를 넣어준다.
    */
-  private void setInitHeaderDefault(HttpServletRequest request) {
+  private void setInitHeaderDefault() {
 
     responseHeader.put("Content-Type", contentType.getMime());
-
+    // responseHeader.put("Set-Cookie", "JSESSIONID=1;");
   }
+
 
   @Override
   public PrintWriter getWriter() throws IOException {

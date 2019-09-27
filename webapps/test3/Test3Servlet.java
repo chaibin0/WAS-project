@@ -17,7 +17,7 @@ public class Test3Servlet extends HttpServlet {
       throws IOException {
 
     PrintWriter out = response.getWriter();
-    out.println("<!DOCTYPE html> <html> <head></head><body><h1>하하하하</h1></body></html>");
+    out.println("<!DOCTYPE html> <html> <head></head><body><h1>war</h1></body></html>");
     out.flush();
     out.close();
 

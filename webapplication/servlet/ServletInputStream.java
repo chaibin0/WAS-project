@@ -1,24 +1,21 @@
 package servlet;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Socket;
 
 public class ServletInputStream extends InputStream {
 
-  Socket socket;
+  InputStream in;
 
-  public int readLine() throws IOException {
+  public ServletInputStream(InputStream inputStream) {
 
-    BufferedInputStream stream = new BufferedInputStream(socket.getInputStream());
-    return stream.read();
+    this.in = inputStream;
   }
 
   @Override
   public int read() throws IOException {
 
-    return socket.getInputStream().read();
+    return in.read();
   }
 
 }

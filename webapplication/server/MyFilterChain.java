@@ -7,7 +7,7 @@ import servlet.FilterChain;
 import servlet.http.HttpServletRequest;
 import servlet.http.HttpServletResponse;
 
-public class MyFilterChain implements FilterChain {
+class MyFilterChain implements FilterChain {
 
   private String url;
 

@@ -11,7 +11,6 @@ import java.util.StringTokenizer;
 
 /**
  * 요청받은 HTTP request 헤더를 분석해서 저장하는 클래스이다. HTTP의 헤더와 body데이터를 저장한다.
- *
  */
 public class HttpParsedRequest {
 
@@ -51,7 +50,6 @@ public class HttpParsedRequest {
 
     content = new HashMap<>();
     header = new Hashtable<>();
-
     String message = getMessage(reader);
 
     // included empty string
@@ -78,6 +76,7 @@ public class HttpParsedRequest {
       String value = st.nextToken();
       header.put(name, value);
     }
+
     switch (method) {
       case "GET":
         StringTokenizer st = new StringTokenizer(requestUrl, GET_PARAMETER_DELIMETER);
@@ -92,7 +91,7 @@ public class HttpParsedRequest {
         break;
       case "PUT":
         url = requestUrl;
-        parseContent(lineSplit[length]);
+        parseContent(bodyMessage(reader));
         break;
       case "DELETE":
         url = requestUrl;
@@ -191,7 +190,6 @@ public class HttpParsedRequest {
     return true;
   }
 
-
   public String getVersion() {
 
     return version;
@@ -230,4 +228,5 @@ public class HttpParsedRequest {
 
     return content.keySet();
   }
+
 }

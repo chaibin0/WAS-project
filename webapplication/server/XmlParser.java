@@ -7,6 +7,7 @@ public class XmlParser {
 
   private static final char OPEN_ANGLE = '<';
 
+  @SuppressWarnings("unused")
   private static final char DECLARE_CHAR = '?';
 
   private static final String END_TAG = "</";
@@ -19,6 +20,7 @@ public class XmlParser {
 
   private Xml iterator = root;
 
+  @SuppressWarnings("unused")
   private String header = "";
 
   /**
@@ -34,8 +36,6 @@ public class XmlParser {
     String line = "";
     // xml 선언문
     if ((header = reader.readLine()) != null) {
-
-
       // xml 통채로 저장
       while ((line = reader.readLine()) != null) {
         xml.append(line);
@@ -63,7 +63,6 @@ public class XmlParser {
       // tag
       if (xmlData.charAt(startIdx) == OPEN_ANGLE) {
         StringBuilder startTag = new StringBuilder();
-        StringBuilder endTag = new StringBuilder(END_TAG);
         int nextStartIdx = 0;
         int nextEndIdx = 0;
         // open Tag
@@ -83,6 +82,7 @@ public class XmlParser {
           }
         }
 
+        StringBuilder endTag = new StringBuilder(END_TAG);
         endTag.append(startTag).append('>');
         int endTagLength = endTag.length();
         // end Tag 찾기

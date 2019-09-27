@@ -49,6 +49,12 @@ public class MappingInfo {
     return servletNameToClass.get(servletName).getInitParameter();
   }
 
+  /**
+   * 서블릿 이름을 통해 서블릿 객체를 찾을 수 있도록 저장하는 메소드.
+   * 
+   * @param servletName 서블릿 이름
+   * @param servlet 매핑으로 만든 서블릿 객체
+   */
   public void setServletClass(String servletName, MappingServlet servlet) {
 
     servletNameToClass.put(servletName, servlet);
@@ -95,6 +101,12 @@ public class MappingInfo {
     return filterPattern.getOrDefault(urlPattern, new ArrayList<>());
   }
 
+  /**
+   * url에 대응하는 필터 이름을 저장한다.
+   * 
+   * @param urlPattern url 정보
+   * @param filterName 필터 이름
+   */
   public void setFilterPattern(String urlPattern, String filterName) {
 
     List<String> filterNames = filterPattern.getOrDefault(urlPattern, new ArrayList<>());

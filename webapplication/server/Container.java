@@ -32,6 +32,8 @@ public class Container {
 
   private Map<Class<?>, Object> loadedClass;
 
+  private Map<String, MyHttpSession> sessionData;
+
   /**
    * 컨테이너 처음 초기화하기 위한 생성자. private 생성자로 초기화할 수 없다.
    */
@@ -71,10 +73,9 @@ public class Container {
         new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
 
       HttpParsedRequest parsedRequest = new HttpParsedRequest(reader);
-      HttpServletRequest request = new Request(parsedRequest);
-      HttpServletResponse response = new Response(request, clientSocket);
+      HttpServletRequest request = new Request(clientSocket, parsedRequest);
+      HttpServletResponse response = new Response(clientSocket, request);
 
-      // get URL
       String url = parsedRequest.getUrl();
       if (url != null && !url.isEmpty()) {
         dispatch(url, request, response);
@@ -98,7 +99,6 @@ public class Container {
 
     Runnable runnable = () -> {
       if (mappingInfo.containsServletPattern(url)) {
-        System.out.println("dispatch : " + url);
         executeFilter(url, request, response);
         // executeServlet(url, request, response);
       } else if (Files.exists(Paths.get("webapps" + urlToPath(url)))) { // 해당프로젝트 파일 존재
@@ -205,6 +205,13 @@ public class Container {
   }
 
 
+  /**
+   * url에 매핑되는 필터를 만들고 서블릿보다 먼저 실행한다.
+   * 
+   * @param url 요청받은 url
+   * @param request servletRequest 객체
+   * @param response servletResponse 객체
+   */
   public void executeFilter(String url, HttpServletRequest request, HttpServletResponse response) {
 
     try {
@@ -344,6 +351,11 @@ public class Container {
   public ServletContext getServletContext() {
 
     return context;
+  }
+
+  public Map<String, MyHttpSession> getSessionData() {
+
+    return sessionData;
   }
 
 
