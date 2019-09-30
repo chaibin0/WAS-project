@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 /**
- * Xml 문서를 파싱한 데이터를 해당 클래스에 저장한다. 트리 형태로 구성되어 있ㄴ다.
+ * Xml 문서를 파싱한 데이터를 해당 클래스에 저장한다. 트리 형태로 구성되어 있다.
  */
 public class Xml {
 

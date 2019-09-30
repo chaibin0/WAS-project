@@ -9,4 +9,8 @@ public interface HttpServletResponse extends ServletResponse {
 
   public void setHeader(String name, String value);
 
+  public void addCookie(String name, String value);
+  
+  public void setStatus(int sc);
+
 }

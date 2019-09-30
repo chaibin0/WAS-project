@@ -20,10 +20,50 @@ public enum ContentType {
 
   String mime;
 
+  /**
+   * 확장자와 Content-Type을 가지는 생성자.
+   * 
+   * @param extension 확장자 타입
+   * @param mime Content-type
+   */
   ContentType(String extension, String mime) {
 
     this.extension = extension;
     this.mime = mime;
+  }
+
+  /**
+   * 확장자를 통해서 ContentType을 구하는 메소드이다.
+   * 
+   * @param extension 확장자 {html,jpg}
+   * @return ContentType ContentType enum을 반환
+   */
+  public static ContentType fromString(String extension) {
+
+    for (ContentType type : ContentType.values()) {
+      if (type.getExtension().equals(extension)) {
+        return type;
+      }
+    }
+    // default conttent type
+    return ContentType.TEXT;
+
+  }
+
+  /**
+   * 확장자를 통해 mime타입을 구하는 메소드.
+   * 
+   * @param extension extension 확장자 {html,jpg}
+   * @return ContentType 문자열을 반환한다.
+   */
+  public static String getMimeForExtension(String extension) {
+
+    for (ContentType type : ContentType.values()) {
+      if (type.getExtension().equals(extension)) {
+        return type.mime;
+      }
+    }
+    return "";
   }
 
   public String getExtension() {
@@ -36,37 +76,4 @@ public enum ContentType {
     return mime;
   }
 
-  /**
-   * 확장자를 통해서 ContentType을 구하는 메소드이다. 
-   * 
-   * @param extension 확장자 {html,jpg}
-   * @return ContentType ContentType enum을 반환
-   */
-  public static ContentType fromString(String extension) {
-
-    for (ContentType type : ContentType.values()) {
-      if (type.getExtension().equals(extension)) {
-        return type;
-      }
-    }
-    //default conttent type
-    return ContentType.TEXT;
-
-  }
-
-  /**
-   *  확장자를 통해 mime타입을 구하는 메소드.
-   * 
-   * @param extension extension 확장자 {html,jpg}
-   * @return ContentType 문자열을 반환한다.
-   */
-  public static String getMimeForExtension(String extension) {
-
-    for (ContentType type : ContentType.values()) {
-      if (type.getExtension().equals(extension)) {
-        return type.mime;
-      }
-    }
-    return HTML.mime;
-  }
 }

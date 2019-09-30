@@ -5,11 +5,11 @@ import java.util.Hashtable;
 import servlet.ServletContext;
 
 
-public class MyServletContext implements ServletContext {
+public class ServletContextImpl implements ServletContext {
 
   private Hashtable<String, String> initParameter;
 
-  public MyServletContext() {
+  public ServletContextImpl() {
 
     initParameter = new Hashtable<>();
   }

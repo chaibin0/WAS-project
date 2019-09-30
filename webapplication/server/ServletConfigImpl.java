@@ -11,7 +11,7 @@ import servlet.ServletContext;
 /**
  * ServletConfig 인터페이스를 구현한 클래스이다.
  */
-public class MyServletConfig implements ServletConfig {
+public class ServletConfigImpl implements ServletConfig {
 
   private String servletName;
 
@@ -27,7 +27,7 @@ public class MyServletConfig implements ServletConfig {
    * @param servletName 서블릿이름
    * @param initParameter InitParameter
    */
-  public MyServletConfig(String servletName, Map<String, String> initParameter) {
+  public ServletConfigImpl(String servletName, Map<String, String> initParameter) {
 
     container = Container.getInstance();
     servletContext = container.getServletContext();
@@ -40,7 +40,7 @@ public class MyServletConfig implements ServletConfig {
    * 
    * @param servletName 서블릿 이름
    */
-  public MyServletConfig(String servletName) {
+  public ServletConfigImpl(String servletName) {
 
     container = Container.getInstance();
     servletContext = container.getServletContext();

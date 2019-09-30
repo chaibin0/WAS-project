@@ -1,8 +1,11 @@
 package server;
 
 /**
- * 응답코드를 나타내는 클래스.
+ * 응답코드를 나타내는 클래스 상태 코드를 통해서 클라이언트에게 기본적인 상태 정보를 전송한다. 
+ * stateCode : 클래스에 관한 상태코드를 의미한다. 
+ * description : 상태코드에 대한 기본적인 정보를 저장한 문자열이다.
  */
+
 enum StateCode {
   OK(200, "ok"),
   MOVED_PERMANENTLY(301, "moved permanently"),
@@ -19,6 +22,19 @@ enum StateCode {
     this.stateCode = stateCode;
     this.description = description;
   }
+
+  public static StateCode fromString(int sc) {
+
+    for (StateCode stateCode : StateCode.values()) {
+      if (stateCode.getStateCode() == sc) {
+        return stateCode;
+      }
+    }
+
+    return NOT_FOUND;
+  }
+
+
 
   public int getStateCode() {
 

@@ -8,6 +8,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import server.exception.FaultElementException;
+import server.log.MyLogger;
 import servlet.ServletContext;
 
 /**
@@ -16,6 +18,8 @@ import servlet.ServletContext;
  */
 public class WebXml {
 
+  private static final MyLogger logger = MyLogger.getLogger();
+
   private static final String WEB_XML = "\\WEB-INF\\web.xml";
 
   private Xml xml;
@@ -23,6 +27,7 @@ public class WebXml {
   private Container container;
 
   private MappingInfo mappingInfo;
+
 
   /**
    * 객체를 생성하고 초기화한다.
@@ -54,12 +59,13 @@ public class WebXml {
           xmlMapping(directory.getFileName(), xml);
         }
       }
+    } catch (FaultElementException e) {
+      e.printStackTrace();
+      logger.errorLog(e.getStackTrace());
     } catch (IOException e) {
-      System.out.println("디렉토리를 찾을 수 없습니다.");
       e.printStackTrace();
-    } catch (Exception e) {
-      System.out.println("잘못된 매핑");
-      e.printStackTrace();
+      logger.errorLog(e.getStackTrace());
+
     }
 
   }
@@ -69,6 +75,8 @@ public class WebXml {
    */
   private void readXml(Path path) {
 
+    logger.log("xml parsing : " + path.toString());
+
     try (BufferedReader reader = new BufferedReader(new FileReader(path.toFile()))) {
       XmlParser parser = new XmlParser();
       String xmlData = parser.getFiles(reader);
@@ -76,13 +84,12 @@ public class WebXml {
 
     } catch (IOException e) {
       e.printStackTrace();
+      logger.errorLog(e.getStackTrace());
+
     }
   }
 
-  /**
-   * xml이 존재하는지 확인하는 메소드.
-   */
-  private boolean isWebXml(Path path) throws IOException {
+  private boolean isWebXml(Path path) {
 
     return Files.exists(Paths.get(path.toAbsolutePath() + WEB_XML));
   }
@@ -94,8 +101,11 @@ public class WebXml {
 
   /**
    * xml을 각각의 태그에 따라 매핑한다. 처음에는 webapp태그를 통한 데이터를 매핑한다.
+   * 
+   * @throws FaultElementException webapp태그의 관련되지 않는 태그가 올경우 에러가 발생한다.
+   * 
    */
-  public void xmlMapping(Path directory, Xml xml) throws Exception {
+  public void xmlMapping(Path directory, Xml xml) throws FaultElementException {
 
     for (Xml subTag : xml.getSubTag()) {
       switch (subTag.getTagName()) {
@@ -108,7 +118,6 @@ public class WebXml {
         case "context-param":
           xmlMappingContextParam(directory, subTag);
           break;
-        // filter부터 이어서 할것
         case "filter":
           xmlMappingFilterNameToClass(directory, subTag);
           break;
@@ -116,14 +125,18 @@ public class WebXml {
           xmlMappingFilterPattern(directory, subTag);
           break;
         default:
+          throw new FaultElementException("매핑 에러");
       }
     }
   }
 
   /**
-   * ContextParam태그에 있는 내용들을 매핑한다.
+   * ContextParam 태그를 매핑하는 메소드.
+   * 
+   * @throws FaultElementException ContextParam태그의 관련되지 않는 태그가 올경우 에러가 발생한다.
    */
-  private void xmlMappingContextParam(Path directory, Xml xmlContextInit) throws Exception {
+  private void xmlMappingContextParam(Path directory, Xml xmlContextInit)
+      throws FaultElementException {
 
     String name = "";
     String value = "";
@@ -136,20 +149,25 @@ public class WebXml {
         case "param-value":
           value = subTag.getValue();
           break;
-
         default:
-          // faultXmlInfoError
+          throw new FaultElementException("매핑 에러");
       }
     }
 
     if (name.isEmpty() || value.isEmpty()) {
-      throw new Exception("매핑 에러");
+      throw new FaultElementException("매핑 에러");
     }
 
     context.setInitParameter(name, value);
   }
 
-  private void xmlMappingFilterPattern(Path directory, Xml filterMapping) {
+  /**
+   * filter-Mapping 태그를 매핑하는 메소드.
+   * 
+   * @throws FaultElementException filter-Mapping 관련되지 않는 태그가 올경우 에러가 발생한다.
+   */
+  private void xmlMappingFilterPattern(Path directory, Xml filterMapping)
+      throws FaultElementException {
 
     List<String> patterns = new ArrayList<>();
 
@@ -164,7 +182,7 @@ public class WebXml {
           break;
 
         default:
-          // faultXmlInfoError
+          throw new FaultElementException("매핑 에러");
       }
     }
     for (String pattern : patterns) {
@@ -172,7 +190,13 @@ public class WebXml {
     }
   }
 
-  private void xmlMappingFilterNameToClass(Path directory, Xml filter) {
+  /**
+   * filter 태그를 매핑하는 메소드.
+   * 
+   * @throws FaultElementException filter태그의 관련되지 않는 태그가 올경우 에러가 발생한다.
+   */
+  private void xmlMappingFilterNameToClass(Path directory, Xml filter)
+      throws FaultElementException {
 
     MappingFilter mappingFilter = new MappingFilter();
     String name = "";
@@ -187,7 +211,7 @@ public class WebXml {
           mappingFilter.setFilterClassName(subTag.getValue());
           break;
         default:
-          // faultXmlInfoError
+          throw new FaultElementException("매핑 에러");
       }
     }
     if (!name.isEmpty() && !className.isEmpty()) {
@@ -196,9 +220,12 @@ public class WebXml {
   }
 
   /**
-   * ServletMapping에 있는 태그들을 매핑한다.
+   * Servlet-Mapping 태그를 매핑하는 메소드.
+   * 
+   * @throws FaultElementException Servlet-Mapping 태그의 관련되지 않는 태그가 올경우 에러가 발생한다.
    */
-  private void xmlMappingServletPatternToName(Path directory, Xml xmlServletMappingInfo) {
+  private void xmlMappingServletPatternToName(Path directory, Xml xmlServletMappingInfo)
+      throws FaultElementException {
 
     List<String> patterns = new ArrayList<>();
     String servletName = "";
@@ -212,6 +239,8 @@ public class WebXml {
           patterns.add("/" + directory.getFileName() + subTag.getValue());
           break;
         default:
+          throw new FaultElementException("매핑 에러");
+
       }
     }
     if (servletName.isEmpty() || patterns.isEmpty()) {
@@ -228,9 +257,11 @@ public class WebXml {
   }
 
   /**
-   * Servlet태그에 있는 내용들을 매핑한다.
+   * servlet태그를 매핑하는 메소드.
+   * 
+   * @throws FaultElementException servlet태그의 관련되지 않는 태그가 올경우 에러가 발생한다.
    */
-  private void xmlMappingServletNameToClass(Xml xmlServletInfo) throws Exception {
+  private void xmlMappingServletNameToClass(Xml xmlServletInfo) throws FaultElementException {
 
     MappingServlet servlet = new MappingServlet();
     String servletName = "";
@@ -252,7 +283,7 @@ public class WebXml {
           xmlMappingServletInitParameter(servlet, subTag);
           break;
         default:
-          // faultXmlInfoError
+          throw new FaultElementException("매핑 에러");
       }
     }
 
@@ -264,10 +295,12 @@ public class WebXml {
   }
 
   /**
-   * servlet 태그에 있는 init-param에 태그들을 매핑하고 MappingServlet에 저장한다.
+   * servlet 태그에 있는 init-param에 태그들을 매핑하고 MappingServlet에 저장하는 메소드.
+   * 
+   * @throws FaultElementException init-param태그의 관련되지 않는 태그가 올경우 에러가 발생한다.
    */
   private void xmlMappingServletInitParameter(MappingServlet servlet, Xml xmlServletInit)
-      throws Exception {
+      throws FaultElementException {
 
     String name = "";
     String value = "";
@@ -282,12 +315,12 @@ public class WebXml {
           break;
 
         default:
-          // faultXmlInfoError
+          throw new FaultElementException("매핑 에러");
       }
     }
 
     if (name.isEmpty() || value.isEmpty()) {
-      throw new Exception("매핑 에러");
+      throw new FaultElementException("매핑 에러");
     }
 
     servlet.setInitParameter(name, value);

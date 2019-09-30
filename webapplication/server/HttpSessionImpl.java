@@ -4,7 +4,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import servlet.http.HttpSession;
 
-public class MyHttpSession implements HttpSession {
+public class HttpSessionImpl implements HttpSession {
 
   private static long increment = 1;
 
@@ -15,7 +15,7 @@ public class MyHttpSession implements HttpSession {
   /**
    * 세션을 새로 만드는 생성자 메소드.
    */
-  public MyHttpSession() {
+  public HttpSessionImpl() {
 
     jessionId = String.valueOf(increment++);
     sessionData = new Hashtable<>();
@@ -30,6 +30,9 @@ public class MyHttpSession implements HttpSession {
   @Override
   public Object getAttribute(String name) {
 
+    if (sessionData.get(name) == null) {
+      return (String) "";
+    }
     return sessionData.get(name);
   }
 

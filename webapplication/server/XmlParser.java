@@ -2,8 +2,11 @@ package server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import server.log.MyLogger;
 
 public class XmlParser {
+
+  private static final MyLogger logger = MyLogger.getLogger();
 
   private static final char OPEN_ANGLE = '<';
 

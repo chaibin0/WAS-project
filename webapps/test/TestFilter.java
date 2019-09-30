@@ -1,6 +1,7 @@
 package test;
 
 import java.io.IOException;
+import servlet.FilterConfig;
 import servlet.Filter;
 import servlet.FilterChain;
 import servlet.http.HttpServletRequest;
@@ -16,7 +17,7 @@ public class TestFilter implements Filter {
 
   public void destroy() {}
 
-  public void init() {}
+  public void init(FilterConfig fConfig) {}
 
   @Override
   public void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)

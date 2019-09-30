@@ -10,4 +10,10 @@ public interface HttpServletRequest extends ServletRequest {
 
   public RequestDispatcher getRequestDispatcher(String path);
 
+  public Cookie[] getCookies();
+
+  public HttpSession getSession(boolean create);
+
+  public HttpSession getSession();
+  
 }

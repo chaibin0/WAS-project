@@ -38,7 +38,7 @@ public class MappingInfo {
    */
   public ServletConfig getServletConfig(String servletName) {
 
-    return new MyServletConfig(servletName, getServletInitParamter(servletName));
+    return new ServletConfigImpl(servletName, getServletInitParamter(servletName));
   }
 
   /**
@@ -60,11 +60,23 @@ public class MappingInfo {
     servletNameToClass.put(servletName, servlet);
   }
 
+  /**
+   * urlpattern을 서블릿이름으로 매핑한다.
+   * 
+   * @param urlPattern url-pattern
+   * @param servletName servlet-name
+   */
   public void setUrlServletPattern(String urlPattern, String servletName) {
 
     servletPatternToName.put(urlPattern, servletName);
   }
 
+  /**
+   * 서블릿이름에 매핑한 클래스가 존재하는지 확인하는 메소드.
+   * 
+   * @param servletName 서블릿 이름
+   * @return 클래스가 존재하면 true를 반환하고 클래스가 없으면 false를 반환한다.
+   */
   public boolean containsServletClassType(String servletName) {
 
     return servletNameToClass.containsKey(servletName);
@@ -101,6 +113,7 @@ public class MappingInfo {
     return filterPattern.getOrDefault(urlPattern, new ArrayList<>());
   }
 
+
   /**
    * url에 대응하는 필터 이름을 저장한다.
    * 
@@ -112,6 +125,11 @@ public class MappingInfo {
     List<String> filterNames = filterPattern.getOrDefault(urlPattern, new ArrayList<>());
     filterNames.add(filterName);
     filterPattern.put(urlPattern, filterNames);
+  }
+
+  public FilterConfigImpl getFilterConfig(String filterName) {
+
+    return new FilterConfigImpl(filterName, filterNameToClass.get(filterName).getInitParameter());
   }
 
 }

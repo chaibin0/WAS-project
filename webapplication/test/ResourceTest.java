@@ -19,7 +19,7 @@ public class ResourceTest {
   }
 
   @Test
-  public void FindImageTest() {
+  public void findImageTest() {
 
     String url = "/test/test.html";
     System.out.println(urlToPath(url));
@@ -57,7 +57,6 @@ public class ResourceTest {
     while (ext.hasMoreTokens()) {
       extension = ext.nextToken();
     }
-
 
     assertEquals(ContentType.getMimeForExtension(extension), "image/x-icon");
   }

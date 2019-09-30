@@ -6,17 +6,22 @@ import java.net.Socket;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import server.log.MyLogger;
 
 /**
  * Web Application Server 클래스.
  */
 public class MyWas {
 
+  private static final MyLogger logger = MyLogger.getLogger();
+
+  private static final int MAX_REQUEST = 100;
+
   private int port;
 
   private Container container;
 
-  private static final int MAX_REQUEST = 100;
+
 
   /**
    * 포트를 설정한다.
@@ -34,6 +39,8 @@ public class MyWas {
    */
   public void start() {
 
+    logger.log("Web Start");
+    
     // xml mapping
     WebXml webXml = new WebXml();
     webXml.parseAllWebXml();
@@ -51,16 +58,22 @@ public class MyWas {
         Runnable request = () -> {
           try {
             container.requestHttp(clientSocket);
-            clientSocket.close();
           } catch (IOException e) {
-            System.out.println("파일 처리에 실패하였습니다.");
             e.printStackTrace();
+            logger.errorLog(e.getStackTrace());
           } catch (NoSuchElementException e) {
-            System.out.println("서블릿이 존재하지 않습니다.");
-            // 404
             e.printStackTrace();
+            logger.errorLog(e.getStackTrace());
           } catch (InterruptedException e) {
             e.printStackTrace();
+            logger.errorLog(e.getStackTrace());
+          } finally {
+            try {
+              clientSocket.close();
+            } catch (IOException e) {
+              e.printStackTrace();
+              logger.errorLog(e.getStackTrace());
+            }
           }
         };
         Thread thread = new Thread(request);
@@ -69,6 +82,7 @@ public class MyWas {
       }
     } catch (IOException e) {
       e.printStackTrace();
+      logger.errorLog(e.getStackTrace());
     }
 
   }

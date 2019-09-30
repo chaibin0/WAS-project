@@ -8,13 +8,15 @@ import java.util.HashMap;
 import java.util.Map;
 import servlet.RequestDispatcher;
 import servlet.ServletInputStream;
+import servlet.http.Cookie;
 import servlet.http.HttpServletRequest;
 import servlet.http.HttpServletResponse;
+import servlet.http.HttpSession;
 
 /**
  * HttpServletRequest 인터페이스를 구현한 객체 클래스이다.
  */
-public class Request implements HttpServletRequest {
+class Request implements HttpServletRequest {
 
   private Container container;
 
@@ -23,6 +25,8 @@ public class Request implements HttpServletRequest {
   private Map<String, String> requestParameter;
 
   private String method;
+
+  private HttpParsedRequest parsedRequest;
 
   /**
    * Request 객체를 초기화하고 인스턴스 변수들을 초기화한다.
@@ -35,6 +39,7 @@ public class Request implements HttpServletRequest {
   public Request(Socket clientSocket, HttpParsedRequest parsedRequest) throws IOException {
 
     this.clientSocket = clientSocket;
+    this.parsedRequest = parsedRequest;
     container = Container.getInstance();
     requestParameter = new HashMap<>();
     initRequestParameter(parsedRequest);
@@ -96,8 +101,50 @@ public class Request implements HttpServletRequest {
       public void forward(HttpServletRequest request, HttpServletResponse response) {
 
         container.dispatch(path, request, response);
-
       }
     };
   }
+
+  @Override
+  public Cookie[] getCookies() {
+
+    Map<String, String> cookieMap = parsedRequest.getCookies();
+    Cookie[] cookies = new Cookie[cookieMap.size()];
+    int cookieCount = 0;
+    for (String name : cookieMap.keySet()) {
+      cookies[cookieCount] = new Cookie(name, cookieMap.get(name));
+    }
+    return cookies;
+  }
+
+  @Override
+  public HttpSession getSession(boolean create) {
+
+    String sessionId = parsedRequest.getSessionId();
+    if (sessionId.isEmpty() || !create) {
+      return null;
+    } else if (sessionId.isEmpty() || create || !container.containsSession(sessionId)) {
+      HttpSessionImpl session = new HttpSessionImpl();
+      container.setSession(session.getId(), session);
+      parsedRequest.setSessionId(session.getId());
+      return session;
+    } else {
+      return container.getSession(sessionId);
+    }
+  }
+
+  @Override
+  public HttpSession getSession() {
+
+    String sessionId = parsedRequest.getSessionId();
+    if (sessionId.isEmpty() || !container.containsSession(sessionId)) {
+      HttpSessionImpl session = new HttpSessionImpl();
+      container.setSession(session.getId(), session);
+      parsedRequest.setSessionId(session.getId());
+      return session;
+    } else {
+      return container.getSession(sessionId);
+    }
+  }
+
 }

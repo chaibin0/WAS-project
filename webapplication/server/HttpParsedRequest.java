@@ -2,30 +2,21 @@ package server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
+import server.log.MyLogger;
 
 /**
  * 요청받은 HTTP request 헤더를 분석해서 저장하는 클래스이다. HTTP의 헤더와 body데이터를 저장한다.
  */
-public class HttpParsedRequest {
+class HttpParsedRequest {
 
-  private String version;
-
-  private String method;
-
-  private String requestUrl;
-
-  private String url;
-
-  private Hashtable<String, String> header;
-
-  // 파라미터
-  private Map<String, String> content;
+  private static final MyLogger logger = MyLogger.getLogger();
 
   private static final String HEADER_DELIMETER = ": ";
 
@@ -36,6 +27,23 @@ public class HttpParsedRequest {
   private static final char PARAMETER_DELIMETER = '=';
 
   private static final char PARAMETER_TOKEN = '&';
+
+  private String version;
+
+  private String method;
+
+  private String requestUrl;
+
+  private String url;
+
+  private String sessionId = "";
+
+  private Hashtable<String, String> header;
+
+  private Map<String, String> cookies;
+
+  private Map<String, String> content;
+
 
   /**
    * HttpParsedRequest 생성자를 통해서 데이터를 파싱하고 저장한다.
@@ -50,17 +58,24 @@ public class HttpParsedRequest {
 
     content = new HashMap<>();
     header = new Hashtable<>();
+
     String message = getMessage(reader);
 
     // included empty string
     String[] lineSplit = message.split(LINE, -1);
-
+    logger.log("request : " + lineSplit[0]);
     // illegal general header
     if (lineSplit[0].isEmpty()) {
       return;
     }
+    initGeneralHeader(lineSplit[0]);
+    initHeader(lineSplit);
+    initContent(reader);
+    initCookies();
+    initSessionId();
+  }
 
-    startLine(lineSplit[0]);
+  private void initHeader(String[] lineSplit) {
 
     // check header
     int length = lineSplit.length;
@@ -70,12 +85,16 @@ public class HttpParsedRequest {
       if (lineSplit[i].isEmpty() || lineSplit[i].equals(" ")) {
         break;
       }
-      String headers = lineSplit[i];
-      StringTokenizer st = new StringTokenizer(headers, HEADER_DELIMETER);
-      String name = st.nextToken();
-      String value = st.nextToken();
-      header.put(name, value);
+      String[] headers = lineSplit[i].split(HEADER_DELIMETER, 2);
+      String name = headers[0];
+      String value = headers[1];
+      if (!name.isEmpty() || !value.isEmpty()) {
+        header.put(name, value);
+      }
     }
+  }
+
+  private void initContent(BufferedReader reader) throws IOException {
 
     switch (method) {
       case "GET":
@@ -95,7 +114,6 @@ public class HttpParsedRequest {
         break;
       case "DELETE":
         url = requestUrl;
-        parseContent(lineSplit[length]);
         break;
       case "TRACE":
         break;
@@ -103,8 +121,15 @@ public class HttpParsedRequest {
         break;
       default:
     }
+  }
 
+  private void initSessionId() {
 
+    if (cookies.containsKey("JSESSIONID")) {
+      sessionId = cookies.get("JSESSIONID");
+    } else {
+      sessionId = "";
+    }
   }
 
   /**
@@ -123,7 +148,8 @@ public class HttpParsedRequest {
   }
 
   /**
-   * POST같은 바디가 존재하는 메시지일 경우 HTTP/1.1의 명세에 따라 Content-Length의 길이만큼 데이터를 받아온다.
+   * 바디가 존재하는 메시지일 경우 HTTP/1.1의 명세에 따라 Content-Length의 길이만큼 데이터를 받아온다. POST, PUT등은 bodyMessage메소드를
+   * 이용해서 데이터를 추가로 가져옵니다.
    */
   private synchronized String bodyMessage(BufferedReader reader) throws IOException {
 
@@ -144,13 +170,13 @@ public class HttpParsedRequest {
   /**
    * General line을 받는 메소드이다. method url version 순으로 받는다.
    */
-  private void startLine(String line) {
+  private void initGeneralHeader(String line) {
 
-    StringTokenizer startLineSplit = new StringTokenizer(line, " ");
-    while (startLineSplit.hasMoreTokens()) {
-      this.method = startLineSplit.nextToken();
-      this.requestUrl = startLineSplit.nextToken();
-      this.version = startLineSplit.nextToken();
+    StringTokenizer lineSplit = new StringTokenizer(line, " ");
+    while (lineSplit.hasMoreTokens()) {
+      this.method = lineSplit.nextToken();
+      this.requestUrl = lineSplit.nextToken();
+      this.version = lineSplit.nextToken();
     }
 
   }
@@ -160,7 +186,6 @@ public class HttpParsedRequest {
    */
   private boolean parseContent(String data) {
 
-    System.out.println("data 파싱 :" + data);
     boolean isKey = true;
     StringBuilder key = new StringBuilder();
     StringBuilder value = new StringBuilder();
@@ -227,6 +252,63 @@ public class HttpParsedRequest {
   public Set<String> getContentKeys() {
 
     return content.keySet();
+  }
+
+  public boolean getHeaderKeys(String key) {
+
+    return header.containsKey(key);
+  }
+
+  public String getSessionId() {
+
+    return sessionId;
+  }
+
+  public void setSessionId(String sessionId) {
+
+    this.sessionId = sessionId;
+  }
+
+  public Map<String, String> getCookies() {
+
+    return cookies;
+  }
+
+  /**
+   * client로부터 받아온 request Message의 쿠키를 Collection에 맞게 초기화한다.
+   */
+  private void initCookies() {
+
+    if (getHeaderKeys("Cookie")) {
+      cookies = parsedCookie(getHeader("Cookie"));
+
+    } else {
+      cookies = Collections.emptyMap();
+    }
+  }
+
+  /**
+   * 여러개의 쿠키를 파싱해서 Map에 저장할 수 있게 변환한다. 세미클론을 기준으로 쿠키 데이터를 분할한다.
+   * 
+   * @param rawCookie client로부터 받아온 cookie 헤더
+   * @return Map Collection
+   */
+  private Map<String, String> parsedCookie(String rawCookie) {
+
+    cookies = new HashMap<>();
+    String name = "";
+    String value = "";
+    StringTokenizer st = new StringTokenizer(rawCookie, "; ");
+    while (st.hasMoreTokens()) {
+      String token = st.nextToken();
+      if (token.contains("=")) {
+        int eq = token.indexOf("=");
+        name = token.substring(0, eq);
+        value = token.substring(eq + 1, token.length());
+        cookies.put(name, value);
+      }
+    }
+    return cookies;
   }
 
 }

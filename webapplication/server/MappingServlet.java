@@ -5,7 +5,7 @@ import java.util.Map;
 import servlet.http.HttpServlet;
 
 /**
- * Web.xml을 통해 만들어진 MappingServlet이다.
+ * Web.xml을 통해 분석된 서블릿 정보를 저장하는 클래스ㄹ.
  */
 class MappingServlet extends HttpServlet {
 

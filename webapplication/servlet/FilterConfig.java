@@ -1,6 +1,6 @@
 package servlet;
 
 
-public class FilterConfig {
+public interface FilterConfig {
 
 }

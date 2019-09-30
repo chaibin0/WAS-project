@@ -16,6 +16,8 @@ public class Test3Servlet extends HttpServlet {
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws IOException {
 
+    response.setHeader("Content-type", "text/html; charset=UTF-8");
+
     PrintWriter out = response.getWriter();
     out.println("<!DOCTYPE html> <html> <head></head><body><h1>war</h1></body></html>");
     out.flush();
