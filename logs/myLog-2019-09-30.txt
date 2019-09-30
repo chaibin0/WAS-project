@@ -1,0 +1,54 @@
+[2019-09-30]pool-1-thread-2 java.lang.Thread.run(Thread.java:748) [2019-09-30]pool-1-thread-1 java.lang.Thread.run(Thread.java:748) request : [Ljava.lang.String;@6a1ccc70
+request : [Ljava.lang.String;@96142b3
+[2019-09-30]pool-1-thread-3 java.lang.Thread.run(Thread.java:748) request : [Ljava.lang.String;@4ef037bb
+[2019-09-30]pool-1-thread-4 java.lang.Thread.run(Thread.java:748) request : [Ljava.lang.String;@27c70537
+[2019-09-30][pool-1-thread-1][java.lang.Thread run]request : 
+[2019-09-30][pool-1-thread-2][java.lang.Thread run]request : GET /test/test HTTP/1.1
+[2019-09-30][pool-1-thread-3][java.lang.Thread run]request : GET /test/style.css HTTP/1.1
+[2019-09-30][pool-1-thread-4][java.lang.Thread run]request : GET /test/images/hos.jpg HTTP/1.1
+[2019-09-30][main][server.Main main]Web Start
+[2019-09-30][main][server.Main main]xml parsing : C:\Users\pc\git\miniwas\webapps\test\WEB-INF\web.xml
+[2019-09-30] ->
+server.WebXml.xmlMapping(WebXml.java:128)
+server.WebXml.findWebXml(WebXml.java:59)
+server.WebXml.parseAllWebXml(WebXml.java:47)
+server.MyWas.start(MyWas.java:46)
+server.Main.main(Main.java:13)
+[2019-09-30] ->
+java.net.DualStackPlainSocketImpl.bind0(Native Method)
+java.net.DualStackPlainSocketImpl.socketBind(DualStackPlainSocketImpl.java:106)
+java.net.AbstractPlainSocketImpl.bind(AbstractPlainSocketImpl.java:387)
+java.net.PlainSocketImpl.bind(PlainSocketImpl.java:190)
+java.net.ServerSocket.bind(ServerSocket.java:375)
+java.net.ServerSocket.<init>(ServerSocket.java:237)
+java.net.ServerSocket.<init>(ServerSocket.java:128)
+server.MyWas.start(MyWas.java:49)
+server.Main.main(Main.java:13)
+[2019-09-30][main][server.Main main]Web Start
+[2019-09-30][main][server.Main main]xml parsing : C:\Users\pc\git\miniwas\webapps\test\WEB-INF\web.xml
+[2019-09-30] ->
+server.WebXml.xmlMapping(WebXml.java:128)
+server.WebXml.findWebXml(WebXml.java:59)
+server.WebXml.parseAllWebXml(WebXml.java:47)
+server.MyWas.start(MyWas.java:46)
+server.Main.main(Main.java:13)
+[2019-09-30][main][server.Main main]Web Start
+[2019-09-30][main][server.Main main]xml parsing : C:\Users\pc\git\miniwas\webapps\test\WEB-INF\web.xml
+[2019-09-30][main][server.Main main]xml parsing : C:\Users\pc\git\miniwas\webapps\test2\WEB-INF\web.xml
+[2019-09-30][pool-1-thread-2][java.lang.Thread run]request : 
+[2019-09-30][pool-1-thread-1][java.lang.Thread run]request : GET /test/test HTTP/1.1
+[2019-09-30][pool-1-thread-1][java.lang.Thread run]filter init : testfilter
+[2019-09-30][pool-1-thread-1][java.lang.Thread run]filter init : testfilter2
+[2019-09-30][pool-1-thread-1][java.lang.Thread run]servlet init : test
+[2019-09-30][pool-1-thread-3][java.lang.Thread run]request : 
+[2019-09-30][pool-1-thread-4][java.lang.Thread run]request : 
+[2019-09-30][pool-1-thread-6][java.lang.Thread run][2019-09-30][pool-1-thread-5][java.lang.Thread run]request : GET /test/images/hos.jpg HTTP/1.1
+request : GET /test/style.css HTTP/1.1
+[2019-09-30][pool-1-thread-8][java.lang.Thread run]request : 
+[2019-09-30][pool-1-thread-7][java.lang.Thread run]request : 
+[2019-09-30][pool-1-thread-9][java.lang.Thread run]request : 
+[2019-09-30][pool-1-thread-10][java.lang.Thread run]request : GET /test/test HTTP/1.1
+[2019-09-30][pool-1-thread-10][java.lang.Thread run]filter init : testfilter
+[2019-09-30][pool-1-thread-10][java.lang.Thread run]filter init : testfilter2
+[2019-09-30][pool-1-thread-11][java.lang.Thread run]request : GET /test/style.css HTTP/1.1
+[2019-09-30][pool-1-thread-12][java.lang.Thread run]request : GET /test/images/hos.jpg HTTP/1.1

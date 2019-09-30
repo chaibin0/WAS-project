@@ -125,7 +125,6 @@ public class WebXml {
           xmlMappingFilterPattern(directory, subTag);
           break;
         default:
-          throw new FaultElementException("매핑 에러");
       }
     }
   }
