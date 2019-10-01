@@ -24,9 +24,13 @@ class HttpParsedRequest {
 
   private static final String GET_PARAMETER_DELIMETER = "?";
 
-  private static final char PARAMETER_DELIMETER = '=';
+  private static final String SEMICOLON_DELIMETER = "; ";
 
-  private static final char PARAMETER_TOKEN = '&';
+  private static final String PARAMETER_DELIMETER = "=";
+
+  private static final char CHAR_PARAMETER_DELIMETER = '=';
+
+  private static final char CHAR_PARAMETER_TOKEN = '&';
 
   private String version;
 
@@ -60,7 +64,6 @@ class HttpParsedRequest {
     header = new Hashtable<>();
 
     String message = getMessage(reader);
-
     // included empty string
     String[] lineSplit = message.split(LINE, -1);
     logger.log("request : " + lineSplit[0]);
@@ -75,6 +78,9 @@ class HttpParsedRequest {
     initSessionId();
   }
 
+  /**
+   * 모든 헤더 데이터에 대해 key: value의 데이터를 분할해서 map에 저장한다.
+   */
   private void initHeader(String[] lineSplit) {
 
     // check header
@@ -94,6 +100,12 @@ class HttpParsedRequest {
     }
   }
 
+  /**
+   * body 데이터를 파싱해서 contents에 저장한다.
+   * POST,PUT은 추가적으로 BufferedReader를 통해 body를 가져온다.
+   * @param reader 클라이언트로로 받아오는 입력 소켓 스트림
+   * @throws IOException IOException
+   */
   private void initContent(BufferedReader reader) throws IOException {
 
     switch (method) {
@@ -122,7 +134,10 @@ class HttpParsedRequest {
       default:
     }
   }
-
+  
+  /**
+   * JSessionId가 있으면 저장하고 없으면 빈문자로 저장한다.
+   */
   private void initSessionId() {
 
     if (cookies.containsKey("JSESSIONID")) {
@@ -135,7 +150,7 @@ class HttpParsedRequest {
   /**
    * HTTP Request 데이터를 한번에 저장한다.
    */
-  private synchronized String getMessage(BufferedReader reader) throws IOException {
+  private String getMessage(BufferedReader reader) throws IOException {
 
     String line = "";
     StringBuilder sb = new StringBuilder();
@@ -190,14 +205,14 @@ class HttpParsedRequest {
     StringBuilder key = new StringBuilder();
     StringBuilder value = new StringBuilder();
     for (int i = 0; i < data.length(); i++) {
-      if (data.charAt(i) == PARAMETER_TOKEN) {
+      if (data.charAt(i) == CHAR_PARAMETER_TOKEN) {
         isKey = true;
         content.put(key.toString(), value.toString());
         key = new StringBuilder();
         value = new StringBuilder();
         continue;
       }
-      if (data.charAt(i) == PARAMETER_DELIMETER) {
+      if (data.charAt(i) == CHAR_PARAMETER_DELIMETER) {
         isKey = false;
         continue;
       }
@@ -281,7 +296,6 @@ class HttpParsedRequest {
 
     if (getHeaderKeys("Cookie")) {
       cookies = parsedCookie(getHeader("Cookie"));
-
     } else {
       cookies = Collections.emptyMap();
     }
@@ -298,11 +312,11 @@ class HttpParsedRequest {
     cookies = new HashMap<>();
     String name = "";
     String value = "";
-    StringTokenizer st = new StringTokenizer(rawCookie, "; ");
+    StringTokenizer st = new StringTokenizer(rawCookie, SEMICOLON_DELIMETER);
     while (st.hasMoreTokens()) {
       String token = st.nextToken();
-      if (token.contains("=")) {
-        int eq = token.indexOf("=");
+      if (token.contains(PARAMETER_DELIMETER)) {
+        int eq = token.indexOf(PARAMETER_DELIMETER);
         name = token.substring(0, eq);
         value = token.substring(eq + 1, token.length());
         cookies.put(name, value);

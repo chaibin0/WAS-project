@@ -31,15 +31,25 @@ public class MyLogger {
     }
   }
 
+  /**
+   * 로그 객체를 반환하는 메소드.
+   * 
+   * @return log 객체
+   */
   public static MyLogger getLogger() {
 
-    
+
     if (logger == null) {
       logger = new MyLogger();
     }
     return logger;
   }
 
+  /**
+   * log 메소드. [날짜][쓰레드이름][클래스이름 메소드이름]순으로 기록이 된다.
+   * 
+   * @param logs 로그 데이터
+   */
   public void log(String logs) {
 
     final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
@@ -52,6 +62,12 @@ public class MyLogger {
     pw.flush();
   }
 
+  /**
+   * 에러 메시지를 로그에 저장한다.
+   * [날짜]->
+   * stackTraceElement의 정보
+   * @param e 예외 에러내용
+   */
   public void errorLog(StackTraceElement[] e) {
 
     pw.println("[" + LocalDate.now() + "] ->");

@@ -45,8 +45,14 @@
 		<filter-name>testfilter</filter-name>
 		<url-pattern>/test</url-pattern>
 	</filter-mapping>
-		<filter-mapping>
+	<filter-mapping>
 		<filter-name>testfilter2</filter-name>
 		<url-pattern>/test</url-pattern>
 	</filter-mapping>
+	<listener>
+		<listener-class>test.TestListener</listener-class>
+	</listener>
+	<listener>
+		<listener-class>test.RequestAttributeListener</listener-class>
+	</listener>
 </web-app>

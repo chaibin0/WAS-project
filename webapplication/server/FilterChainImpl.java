@@ -6,9 +6,14 @@ import java.lang.reflect.Method;
 import server.log.MyLogger;
 import servlet.FilterChain;
 import servlet.FilterConfig;
-import servlet.http.HttpServletRequest;
-import servlet.http.HttpServletResponse;
+import servlet.ServletRequest;
+import servlet.ServletResponse;
 
+/**
+ * FilterChain 인터페이스를 구현한 클래스이다.
+ * 이 클래스는 필터 객체의 정보와 다음 필터 객체의 정보가 들어있는 FilterChain 객체를 저장하고 있다.
+ *
+ */
 class FilterChainImpl implements FilterChain {
 
   private static final MyLogger logger = MyLogger.getLogger();
@@ -32,8 +37,7 @@ class FilterChainImpl implements FilterChain {
   /**
    * FilterChain이 연결되어 있는 filter객체에서 filter를 실행하는 메소드이다. 만약 다음 필터가 존재하지 않을 경우 서블릿을 실행한다.
    */
-  public void doFilter(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
+  public void doFilter(ServletRequest request, ServletResponse response) throws IOException {
 
     if (next == null) {
       container.executeServlet(url, request, response);
@@ -41,10 +45,9 @@ class FilterChainImpl implements FilterChain {
     }
 
     try {
-      Class<?>[] paramType = {servlet.http.HttpServletRequest.class,
-          servlet.http.HttpServletResponse.class, servlet.FilterChain.class};
+      Class<?>[] paramType =
+          {servlet.ServletRequest.class, servlet.ServletResponse.class, servlet.FilterChain.class};
       Method method = filter.getDeclaredMethod("doFilter", paramType);
-      // Object instance =filter.newInstance();
       Object instance = getFilterInstance();
       Object[] param = {request, response, next};
       method.invoke(instance, param);

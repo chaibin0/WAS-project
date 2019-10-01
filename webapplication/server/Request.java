@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import server.enums.AttributeListenerType;
 import servlet.RequestDispatcher;
 import servlet.ServletInputStream;
 import servlet.http.Cookie;
@@ -20,9 +21,11 @@ class Request implements HttpServletRequest {
 
   private Container container;
 
+  private ListenerContainer listenerContainer;
+
   private Socket clientSocket;
 
-  private Map<String, String> requestParameter;
+  private Map<String, Object> requestParameter;
 
   private String method;
 
@@ -41,9 +44,11 @@ class Request implements HttpServletRequest {
     this.clientSocket = clientSocket;
     this.parsedRequest = parsedRequest;
     container = Container.getInstance();
+    listenerContainer = ListenerContainer.getListenerContainer();
     requestParameter = new HashMap<>();
     initRequestParameter(parsedRequest);
     method = parsedRequest.getMethod();
+
   }
 
   /**
@@ -57,15 +62,15 @@ class Request implements HttpServletRequest {
   }
 
   @Override
-  public String getParameter(String name) {
+  public Object getParameter(String name) {
 
     return requestParameter.get(name);
   }
 
   @Override
-  public String[] getParameterValues(String name) {
+  public Object[] getParameterValues(String name) {
 
-    return (String[]) requestParameter.keySet().toArray();
+    return (Object[]) requestParameter.keySet().toArray();
   }
 
   @Override
@@ -145,6 +150,30 @@ class Request implements HttpServletRequest {
     } else {
       return container.getSession(sessionId);
     }
+  }
+
+  @Override
+  public void setAttribute(String name, Object value) {
+
+    if (requestParameter.containsKey(name)) {
+      Object val = requestParameter.get(name);
+      listenerContainer.eventRequestAttribute(AttributeListenerType.REPLACE, name, val);
+    } else {
+      listenerContainer.eventRequestAttribute(AttributeListenerType.ADD, name, value);
+    }
+    requestParameter.put(name, value);
+  }
+
+  @Override
+  public void removeAttribute(String name) {
+
+    if (!requestParameter.containsKey(name)) {
+      return;
+    }
+    
+    Object value = requestParameter.get(name);
+    listenerContainer.eventRequestAttribute(AttributeListenerType.REMOVE, name, value);
+    requestParameter.remove(name);
   }
 
 }

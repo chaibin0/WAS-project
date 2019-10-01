@@ -14,16 +14,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
+import server.enums.ContentType;
+import server.enums.RequestLifeCycleListenerType;
+import server.enums.StateCode;
 import server.log.MyLogger;
 import servlet.FilterChain;
 import servlet.ServletConfig;
 import servlet.ServletContext;
+import servlet.ServletRequest;
+import servlet.ServletResponse;
 import servlet.http.HttpServletRequest;
 import servlet.http.HttpServletResponse;
 
+/**
+ * 웹 서버 컨테이너로너 싱글톤 클래스이다. 클라이언트로부터 요청이 올 경우 처리하고 다시 데이터를 전송하는 역할을 한다.
+ */
 public class Container {
 
   private static final MyLogger logger = MyLogger.getLogger();
@@ -40,6 +49,8 @@ public class Container {
 
   private Map<String, HttpSessionImpl> sessionData;
 
+  private ListenerContainer listenerContainer;
+
   /**
    * 컨테이너 처음 초기화하기 위한 생성자. private 생성자로 초기화할 수 없다.
    */
@@ -49,13 +60,13 @@ public class Container {
     loadedServlet = new HashMap<>();
     mappingInfo = new MappingInfo();
     sessionData = new HashMap<>();
-    context = new ServletContextImpl();
+    listenerContainer = ListenerContainer.getListenerContainer();
   }
 
   /**
-   * 컨테이너는 싱글톤이므로 유일한 컨테이너 객체만 반환하고 만약 존재하지 않으면 싱글톤 컨테이너를 생성한다.
+   * 컨테이너는 싱글톤이다 유일한 웹 컨테이너 객체만 반환하고 만약 존재하지 않으면 웹 컨테이너를 생성한다.
    * 
-   * @return container 싱글톤 객체
+   * @return container 서블릿 컨테이너 객체
    */
   public static Container getInstance() {
 
@@ -66,7 +77,8 @@ public class Container {
   }
 
   /**
-   * 클라이언트로부터 요청이 들어올 경우 requestHttp 메소드에서 처리한다.
+   * 클라이언트로부터 요청이 들어올 경우 requestHttp 메소드에서 처리한다. ServletRequestListener가 등록되어 있을 경우 요청 받을 때마다 리스너가
+   * 실행된다.
    * 
    * @param clientSocket 클라이언트 소켓
    * @throws IOException IOException
@@ -81,9 +93,13 @@ public class Container {
         new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
 
       HttpParsedRequest parsedRequest = new HttpParsedRequest(reader);
-      HttpServletRequest request = new Request(clientSocket, parsedRequest);
-      HttpServletResponse response = new Response(clientSocket, parsedRequest);
+      ServletRequest request = new Request(clientSocket, parsedRequest);
+      ServletResponse response = new Response(clientSocket, parsedRequest);
       String url = parsedRequest.getUrl();
+
+      // 요청 리스너
+      listenerContainer.eventServletRequest(RequestLifeCycleListenerType.INIT, request);
+
       if (url != null && !url.isEmpty()) {
         dispatch(url, request, response);
       }
@@ -98,13 +114,13 @@ public class Container {
 
   /**
    * 요청된 url를 기반으로 서블릿일 경우 executeServlet을 실행하고 웹어플리케이션 리소스나 해당 프로젝트에 존재하는 파일일 경우 sendResource에서
-   * 실행한다.
+   * 실행한다. 어떠한 파일을 찾기 못할 경우 404에러로 클라이언트에게 전송한다.
    * 
    * @param url 요청받은 url-pattern
    * @param request 서블릿일 경우 HttpServletRequest 객체를 생성한다.
    * @param response HttpServletResponse 객체를 통해 출력 스트림을 사용한다.
    */
-  public void dispatch(String url, HttpServletRequest request, HttpServletResponse response) {
+  public void dispatch(String url, ServletRequest request, ServletResponse response) {
 
     Runnable runnable = () -> {
       if (mappingInfo.containsServletPattern(url)) {
@@ -134,12 +150,14 @@ public class Container {
    * @param sc 상태 코드
    * @param response HttpServletResponse 객체
    */
-  public void sendError(StateCode sc, HttpServletResponse response) {
+  public void sendError(StateCode sc, ServletResponse response) {
 
-    response.setStatus(sc.getStateCode());
-    response.setHeader("Content-Type", ContentType.HTML.getMime());
+    HttpServletResponse res = (HttpServletResponse) response;
+
+    res.setStatus(sc.getStateCode());
+    res.setHeader("Content-Type", ContentType.HTML.getMime());
     Path path = Paths.get("resources\\" + urlToPath(String.valueOf(sc.getStateCode()) + ".html"));
-    sendTextFile(path, response);
+    sendTextFile(path, res);
   }
 
   /**
@@ -173,31 +191,31 @@ public class Container {
    * 
    * @see Container#dispatch(String, HttpServletRequest, HttpServletResponse)
    */
-  private void sendResource(Path path, HttpServletResponse response) {
+  private void sendResource(Path path, ServletResponse response) {
 
+    HttpServletResponse res = (HttpServletResponse) response;
     // URL 분석
     String extension = getExtension(path.toString());
     ContentType contentType = ContentType.fromString(extension);
     // contentype 설정
-    response.setHeader("Content-Type", contentType.getMime());
+    res.setHeader("Content-Type", contentType.getMime());
     switch (contentType) {
       case JPG:
       case ICO:
       case PNG:
       case GIF:
-        sendImageFile(path, response);
+        sendImageFile(path, res);
         break;
 
       default:
-        sendTextFile(path, response);
+        sendTextFile(path, res);
 
     }
   }
 
   /**
-   * 이미지 파일일 경우 BufferedOutputStream을 통해 전송한다. 이미지 데이터는 반드시 Content-length헤더를 통해 데이터의 길이를 전송하여야 한다.
+   * 이미지 파일일 경우 BufferedOutputStream을 통해 전송한다. 이미지 데이터는 Content-length헤더를 통해 데이터의 길이를 전송한다.
    * 
-   * @see Container#sendResource(Path, HttpServletResponse)
    */
   private synchronized void sendImageFile(Path path, HttpServletResponse response) {
 
@@ -222,8 +240,6 @@ public class Container {
 
   /**
    * 텍스트 파일일 경우 BufferedReader스트림을 통해 전송한다.
-   * 
-   * @see Container#sendResource(Path, HttpServletResponse)
    */
   private synchronized void sendTextFile(Path path, HttpServletResponse response) {
 
@@ -266,7 +282,7 @@ public class Container {
    * @param request servletRequest 객체
    * @param response servletResponse 객체
    */
-  public void executeFilter(String url, HttpServletRequest request, HttpServletResponse response) {
+  public void executeFilter(String url, ServletRequest request, ServletResponse response) {
 
     try {
 
@@ -286,15 +302,18 @@ public class Container {
    * 
    * @param url url
    */
-  public void executeServlet(String url, HttpServletRequest request, HttpServletResponse response) {
+  public void executeServlet(String url, ServletRequest request, ServletResponse response) {
 
     try {
+
+      HttpServletRequest req = (HttpServletRequest) request;
+      HttpServletResponse res = (HttpServletResponse) response;
 
       String servletName = mappingInfo.getServletName(url);
       MappingServlet mappingServlet = mappingInfo.getServletClassType(servletName);
       Class<?> servlet = Class.forName(mappingServlet.getServletClassName());
       Object instance = getServletClass(servlet, servletName);
-      invokeServiceMethod(instance, servlet, request, response);
+      invokeServiceMethod(instance, servlet, req, res);
 
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
@@ -362,7 +381,6 @@ public class Container {
     try {
 
       logger.log("servlet init : " + servletName);
-
       Class<?>[] typeParam = {servlet.ServletConfig.class};
       Method init = servlet.getSuperclass().getSuperclass().getDeclaredMethod("init", typeParam);
       ServletConfig config = mappingInfo.getServletConfig(servletName);
@@ -417,8 +435,6 @@ public class Container {
 
   /**
    * MappingInfo 객체를 반환하는 메소드.
-   * 
-   * @return
    */
   public MappingInfo getMappingInfo() {
 
@@ -441,25 +457,78 @@ public class Container {
     return sessionData.get(name);
   }
 
-  public void setSession(String name, HttpSessionImpl session) {
+  /**
+   * 세션 아이디를 컨테이너에 저장하는 메소드.
+   * 
+   * @param jsessionid 세션 아이디
+   * @param session 세션클래스
+   */
+  public void setSession(String jsessionid, HttpSessionImpl session) {
 
-    sessionData.put(name, session);
+    sessionData.put(jsessionid, session);
   }
 
-  public boolean containsSession(String name) {
+  /**
+   * JESSESIONID가 존재하고 있는지 확인하는 메소드.
+   * 
+   * @param sessionId JESSIONID
+   * @return 존재하면 true, 그렇지 않으면 false를 반환
+   */
+  public boolean containsSession(String sessionId) {
 
-    return sessionData.containsKey(name);
+    return sessionData.containsKey(sessionId);
   }
 
 
+  /**
+   * 인스턴스화된 필터가 존재하는지 확인한다.
+   * 
+   * @param filter 필터 클래스 타입
+   * @return 인스턴스화된 필터가 있으면 true, 그렇지 않으면 false를 반환
+   */
   public boolean containsLoadedFilter(Class<?> filter) {
 
     return loadedFilter.containsKey(filter);
   }
 
 
+  /**
+   * 인스턴스화가 되어있는 필터 객체를 반환한다.
+   * 
+   * @param filter filter type
+   * @return filter object
+   */
   public Object getLoadedFilter(Class<?> filter) {
 
     return loadedFilter;
+  }
+
+  /**
+   * ServletContext를 초기화한다.
+   */
+  public void initServletContext() {
+
+    context = new ServletContextImpl();
+
+    Map<String, String> contextParam = mappingInfo.getServletContextInitParam();
+    for (String name : contextParam.keySet()) {
+      context.setInitParameter(name, contextParam.get(name));
+    }
+  }
+
+  /**
+   * 모든 리스너는 인터페이스에 적용된 리스너에 따라 리스너 클래스 타입을 저장한다.
+   */
+  public void initListener() {
+
+    try {
+      List<String> list = mappingInfo.getListener();
+      for (String listenerName : list) {
+        Class<?> listenerClass = Class.forName(listenerName);
+        listenerContainer.addListener(listenerClass, listenerClass.getInterfaces());
+      }
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
   }
 }

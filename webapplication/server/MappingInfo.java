@@ -19,6 +19,10 @@ public class MappingInfo {
 
   private Map<String, List<String>> filterPattern;
 
+  private Map<String, String> servletContextInitParam;
+
+  private List<String> listener;
+
   /**
    * 객체를 생성하고 인스턴스 변수들을 초기화한다.
    */
@@ -28,6 +32,8 @@ public class MappingInfo {
     servletPatternToName = new HashMap<>();
     filterNameToClass = new HashMap<>();
     filterPattern = new HashMap<>();
+    servletContextInitParam = new HashMap<>();
+    listener = new ArrayList<>();
   }
 
   /**
@@ -132,6 +138,25 @@ public class MappingInfo {
     return new FilterConfigImpl(filterName, filterNameToClass.get(filterName).getInitParameter());
   }
 
+  public void addListener(String listenerName) {
+
+    listener.add(listenerName);
+  }
+
+  public List<String> getListener() {
+
+    return listener;
+  }
+
+  public void setServletContextInitParam(String name, String value) {
+
+    servletContextInitParam.put(name, value);
+  }
+
+  public Map<String, String> getServletContextInitParam() {
+
+    return servletContextInitParam;
+  }
 }
 
 

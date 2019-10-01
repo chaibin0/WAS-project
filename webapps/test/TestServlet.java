@@ -26,6 +26,10 @@ public class TestServlet extends HttpServlet {
     // session.setAttribute("login", "aaa");
     // response.addCookie("abc", "test");
     // response.addCookie("abc2", "test2");
+    // request.setAttribute("color", "yello");
+    HttpSession session = request.getSession();
+    ValueTest test = new ValueTest("hi");
+    session.setAttribute("abc", test);
     RequestDispatcher dispatcher = request.getRequestDispatcher("/test/test.html");
     dispatcher.forward(request, response);
 

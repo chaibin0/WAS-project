@@ -31,6 +31,13 @@ public class MyWas {
   public MyWas(int port) {
 
     container = Container.getInstance();
+
+    // xml mapping
+    WebXml webXml = new WebXml();
+    webXml.parseAllWebXml();
+
+    container.initListener();
+    container.initServletContext();
     this.port = port;
   }
 
@@ -40,10 +47,6 @@ public class MyWas {
   public void start() {
 
     logger.log("Web Start");
-    
-    // xml mapping
-    WebXml webXml = new WebXml();
-    webXml.parseAllWebXml();
 
     // ready for client request
     try (ServerSocket wasServer = new ServerSocket(port)) {

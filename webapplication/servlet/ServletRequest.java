@@ -6,9 +6,9 @@ import java.util.Map;
 
 public interface ServletRequest {
 
-  public String getParameter(String name);
+  public Object getParameter(String name);
 
-  public String[] getParameterValues(String name);
+  public Object[] getParameterValues(String name);
 
   public Map<String, String[]> getParameterMap();
 
@@ -16,5 +16,9 @@ public interface ServletRequest {
 
   public BufferedReader getReader() throws IOException;
 
+  public void setAttribute(String name, Object o);
+  
+  public void removeAttribute(String name);
+  
 
 }

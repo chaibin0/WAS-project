@@ -6,8 +6,8 @@ import server.log.MyLogger;
 import servlet.Filter;
 import servlet.FilterChain;
 import servlet.FilterConfig;
-import servlet.http.HttpServletRequest;
-import servlet.http.HttpServletResponse;
+import servlet.ServletRequest;
+import servlet.ServletResponse;
 
 public class FilterImpl implements Filter {
 
@@ -64,7 +64,7 @@ public class FilterImpl implements Filter {
   }
 
   @Override
-  public void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+  public void doFilter(ServletRequest request,ServletResponse response, FilterChain chain)
       throws IOException {
 
     chain.doFilter(request, response);

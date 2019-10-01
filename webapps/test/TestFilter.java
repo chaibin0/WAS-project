@@ -1,11 +1,11 @@
 package test;
 
 import java.io.IOException;
-import servlet.FilterConfig;
 import servlet.Filter;
 import servlet.FilterChain;
-import servlet.http.HttpServletRequest;
-import servlet.http.HttpServletResponse;
+import servlet.FilterConfig;
+import servlet.ServletRequest;
+import servlet.ServletResponse;
 
 /**
  * Servlet Filter implementation class TestFilter
@@ -20,7 +20,7 @@ public class TestFilter implements Filter {
   public void init(FilterConfig fConfig) {}
 
   @Override
-  public void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException {
     
     System.out.println("startTestFilter!!");

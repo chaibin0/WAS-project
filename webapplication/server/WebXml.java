@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import server.exception.FaultElementException;
 import server.log.MyLogger;
-import servlet.ServletContext;
 
 /**
  * WebXml을 분석하는 클래스.
@@ -27,6 +26,7 @@ public class WebXml {
   private Container container;
 
   private MappingInfo mappingInfo;
+
 
 
   /**
@@ -124,9 +124,26 @@ public class WebXml {
         case "filter-mapping":
           xmlMappingFilterPattern(directory, subTag);
           break;
+        case "listener":
+          xmlMappingListener(directory, subTag);
+          break;
         default:
       }
     }
+  }
+
+  private void xmlMappingListener(Path directory, Xml listener) {
+
+    for (Xml subTag : listener.getSubTag()) {
+      switch (subTag.getTagName()) {
+        case "listener-class":
+          mappingInfo.addListener(subTag.getValue());
+          break;
+        default:
+      }
+    }
+
+
   }
 
   /**
@@ -139,7 +156,7 @@ public class WebXml {
 
     String name = "";
     String value = "";
-    ServletContext context = container.getServletContext();
+
     for (Xml subTag : xmlContextInit.getSubTag()) {
       switch (subTag.getTagName()) {
         case "param-name":
@@ -157,7 +174,7 @@ public class WebXml {
       throw new FaultElementException("매핑 에러");
     }
 
-    context.setInitParameter(name, value);
+    mappingInfo.setServletContextInitParam(name, value);
   }
 
   /**
