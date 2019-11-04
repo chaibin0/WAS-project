@@ -51,7 +51,7 @@ public class MyWas {
     // ready for client request
     try (ServerSocket wasServer = new ServerSocket(port)) {
       // limit request
-      ExecutorService threadFool = Executors.newFixedThreadPool(MAX_REQUEST);
+      ExecutorService threadPool = Executors.newFixedThreadPool(MAX_REQUEST);
 
       while (true) {
         Socket clientSocket = wasServer.accept();
@@ -80,7 +80,7 @@ public class MyWas {
           }
         };
         Thread thread = new Thread(request);
-        threadFool.execute(thread);
+        threadPool.execute(thread);
 
       }
     } catch (IOException e) {
