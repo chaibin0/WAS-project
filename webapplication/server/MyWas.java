@@ -57,31 +57,32 @@ public class MyWas {
         Socket clientSocket = wasServer.accept();
         clientSocket.setKeepAlive(true);
         clientSocket.setSoTimeout(5000);
-
-        Runnable request = () -> {
-          try {
-            container.requestHttp(clientSocket);
-          } catch (IOException e) {
-            e.printStackTrace();
-            logger.errorLog(e.getStackTrace());
-          } catch (NoSuchElementException e) {
-            e.printStackTrace();
-            logger.errorLog(e.getStackTrace());
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-            logger.errorLog(e.getStackTrace());
-          } finally {
+        
+        //Future메소드 이용할것
+        threadPool.execute(new Runnable() {
+          public void run() {
             try {
-              clientSocket.close();
+              container.requestHttp(clientSocket);
             } catch (IOException e) {
               e.printStackTrace();
               logger.errorLog(e.getStackTrace());
+            } catch (NoSuchElementException e) {
+              e.printStackTrace();
+              logger.errorLog(e.getStackTrace());
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+              logger.errorLog(e.getStackTrace());
+            } finally {
+              try {
+                clientSocket.close();
+              } catch (IOException e) {
+                e.printStackTrace();
+                logger.errorLog(e.getStackTrace());
+              }
             }
           }
-        };
-        Thread thread = new Thread(request);
-        threadPool.execute(thread);
-
+        });
+        
       }
     } catch (IOException e) {
       e.printStackTrace();
